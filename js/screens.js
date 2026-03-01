@@ -411,8 +411,14 @@ function renderProfile() {
         <div style="text-align:center;padding:40px;color:var(--tm)">กำลังโหลด...</div>
       </div>
       <div style="padding:16px;display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-outline btn-full" onclick="Screens.showEditProfile()">✏️ แก้ไขข้อมูล</button>
+
+        <button class="btn btn-outline btn-full" onclick="Screens.showChangePin()">🔐 เปลี่ยน PIN</button>
+
         ${s.account_type === 'group' ? `<button class="btn btn-outline btn-full" onclick="Screens.switchUserFlow()">🔄 เปลี่ยนชื่อผู้ใช้</button>` : ''}
+
         <button class="btn btn-danger btn-full" onclick="Screens.doLogout()">ออกจากระบบ</button>
+
       </div>
     </div>
     <div class="bottom-bar">
@@ -446,6 +452,7 @@ async function loadProfile() {
       <div class="profile-row"><span class="label">ร้าน</span><span class="value">${esc(data.store_name_th || data.store_id || '-')}</span></div>
       <div class="profile-row"><span class="label">แผนก</span><span class="value">${esc(data.dept_name_th || data.dept_id || '-')}</span></div>
       ${data.email ? `<div class="profile-row"><span class="label">อีเมล</span><span class="value">${esc(data.email)}</span></div>` : ''}
+      ${data.phone ? `<div class="profile-row"><span class="label">เบอร์โทร</span><span class="value">${esc(data.phone)}</span></div>` : ''}
     </div>
     <div class="profile-section">
       <div class="profile-row"><span class="label">Session หมดอายุ</span><span class="value">${formatDate(data.session_expires_at)}</span></div>
@@ -478,6 +485,226 @@ function switchUserFlow() {
     store_id: s.store_id
   });
   App.go('staff-select');
+}
+
+// ════════════════════════════════
+
+// EDIT PROFILE POPUP
+
+// ════════════════════════════════
+
+function showEditProfile() {
+
+  const s = API.getSession();
+
+  if (!s) return;
+
+  
+
+  const html = `
+
+  <div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)this.remove()">
+
+    <div class="modal-sheet">
+
+      <div class="modal-handle"></div>
+
+      <div class="modal-title">✏️ แก้ไขข้อมูล</div>
+
+      <div class="input-group">
+
+        <label>ชื่อ-นามสกุล</label>
+
+        <input type="text" class="input-field" id="inp-edit-full" placeholder="ชื่อจริง นามสกุล">
+
+      </div>
+
+      <div class="input-group">
+
+        <label>เบอร์โทร</label>
+
+        <input type="tel" class="input-field" id="inp-edit-phone" placeholder="0812345678" inputmode="tel">
+
+      </div>
+
+      <div class="error-msg" id="edit-error"></div>
+
+      <div style="display:flex;gap:8px;margin-top:16px">
+
+        <button class="btn btn-gold btn-full" onclick="Screens.doUpdateProfile()">บันทึก</button>
+
+      </div>
+
+    </div>
+
+  </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+
+  
+
+  API.getProfile().then(data => {
+
+    const full = document.getElementById('inp-edit-full');
+
+    const phone = document.getElementById('inp-edit-phone');
+
+    if (full) full.value = data.full_name || '';
+
+    if (phone) phone.value = data.phone || '';
+
+  });
+
+}
+
+async function doUpdateProfile() {
+
+  const full_name = document.getElementById('inp-edit-full').value.trim();
+
+  const phone = document.getElementById('inp-edit-phone').value.trim();
+
+  
+
+  if (!full_name) {
+
+    showFieldError('edit-error', 'กรุณากรอกชื่อ-นามสกุล');
+
+    return;
+
+  }
+
+  
+
+  App.showLoader();
+
+  try {
+
+    await API.updateProfile({ full_name, phone });
+
+    document.getElementById('edit-modal')?.remove();
+
+    App.hideLoader();
+
+    App.toast('อัปเดตข้อมูลสำเร็จ', 'success');
+
+    App.go('profile');
+
+  } catch (err) {
+
+    App.hideLoader();
+
+    showFieldError('edit-error', err.message || 'เกิดข้อผิดพลาด');
+
+  }
+
+}
+
+// ════════════════════════════════
+
+// CHANGE PIN POPUP
+
+// ════════════════════════════════
+
+function showChangePin() {
+
+  const html = `
+
+  <div class="modal-overlay" id="pin-change-modal" onclick="if(event.target===this)this.remove()">
+
+    <div class="modal-sheet">
+
+      <div class="modal-handle"></div>
+
+      <div class="modal-title">🔐 เปลี่ยน PIN</div>
+
+      <div class="input-group">
+
+        <label>PIN เดิม (ถ้ามี)</label>
+
+        <input type="password" class="input-field" id="inp-old-pin" maxlength="6" inputmode="numeric" placeholder="PIN เดิม 6 หลัก">
+
+      </div>
+
+      <div class="input-group">
+
+        <label>PIN ใหม่</label>
+
+        <input type="password" class="input-field" id="inp-new-pin" maxlength="6" inputmode="numeric" placeholder="PIN ใหม่ 6 หลัก">
+
+      </div>
+
+      <div class="input-group">
+
+        <label>ยืนยัน PIN ใหม่</label>
+
+        <input type="password" class="input-field" id="inp-confirm-pin" maxlength="6" inputmode="numeric" placeholder="กรอก PIN ใหม่อีกครั้ง">
+
+      </div>
+
+      <div class="error-msg" id="pin-change-error"></div>
+
+      <div style="display:flex;gap:8px;margin-top:16px">
+
+        <button class="btn btn-gold btn-full" onclick="Screens.doChangePin()">เปลี่ยน PIN</button>
+
+      </div>
+
+    </div>
+
+  </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', html);
+
+}
+
+async function doChangePin() {
+
+  const current_pin = document.getElementById('inp-old-pin').value.trim();
+
+  const new_pin = document.getElementById('inp-new-pin').value.trim();
+
+  const confirm_pin = document.getElementById('inp-confirm-pin').value.trim();
+
+  
+
+  if (!new_pin || new_pin.length !== 6 || !/^\d{6}$/.test(new_pin)) {
+
+    showFieldError('pin-change-error', 'PIN ใหม่ต้องเป็นตัวเลข 6 หลัก');
+
+    return;
+
+  }
+
+  if (new_pin !== confirm_pin) {
+
+    showFieldError('pin-change-error', 'PIN ใหม่ไม่ตรงกัน');
+
+    return;
+
+  }
+
+  
+
+  App.showLoader();
+
+  try {
+
+    await API.changePin({ current_pin, new_pin });
+
+    document.getElementById('pin-change-modal')?.remove();
+
+    App.hideLoader();
+
+    App.toast('เปลี่ยน PIN สำเร็จ', 'success');
+
+  } catch (err) {
+
+    App.hideLoader();
+
+    showFieldError('pin-change-error', err.message || 'เกิดข้อผิดพลาด');
+
+  }
+
 }
 
 // ════════════════════════════════
@@ -530,7 +757,9 @@ return {
   renderStaffSelect, loadStaffList, selectStaff, showPinPopup, submitPin,
   renderNewStaff, doCreateStaff,
   renderDashboard, loadModules, launchModule,
-  renderProfile, loadProfile, doLogout, switchUserFlow
+  renderProfile, loadProfile, doLogout, switchUserFlow,
+  showEditProfile, doUpdateProfile, showChangePin, doChangePin
+
 };
 
 })();

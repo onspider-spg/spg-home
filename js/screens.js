@@ -284,12 +284,14 @@ async function doCreateStaff(e) {
 const display_name = $('inp-staff-nick').value.trim();
   const full_name = $('inp-staff-full').value.trim();
   const pin = $('inp-staff-pin').value.trim();
+  const phone = $('inp-staff-phone') ? $('inp-staff-phone').value.trim() : '';
+
   if (!display_name || !full_name) return showFieldError('staff-error', 'กรุณากรอกข้อมูลให้ครบ');
   if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) return showFieldError('staff-error', 'PIN ต้องเป็นตัวเลข 6 หลัก');
 
   App.showLoader();
   try {
-   const data = await API.createUser({ account_id: acc.account_id, display_name, full_name, pin });
+   const data = await API.createUser({ account_id: acc.account_id, display_name, full_name, pin, phone });
     App.toast(`เพิ่ม "${display_name}" สำเร็จ`, 'success');
     // Auto-select the new user
     await selectStaff(data.user_id);

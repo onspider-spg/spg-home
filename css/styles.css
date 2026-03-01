@@ -1,40 +1,40 @@
 /* ═══════════════════════════════════════════
    SPG App — Home Module
-   styles.css — Dark Theme, Gold Accent, Mobile-First
+   styles.css — Light Theme, Gold Accent, Mobile-First
    Font: IBM Plex Sans Thai
    ═══════════════════════════════════════════ */
 
 :root {
-  --bg: #0a0a0a;
-  --s1: #111111;
-  --s2: #1a1a1a;
-  --s3: #222222;
-  --s4: #2a2a2a;
-  --b1: #2a2a2a;
-  --b2: #333333;
-  --b3: #444444;
-  --gold: #f5c842;
-  --gold-dim: #d4960a;
-  --gold-bg: rgba(245, 200, 66, 0.08);
-  --gold-bg2: rgba(245, 200, 66, 0.15);
-  --blue: #60a5fa;
-  --blue-bg: rgba(96, 165, 250, 0.1);
-  --green: #4ade80;
-  --green-bg: rgba(74, 222, 128, 0.1);
-  --red: #f87171;
-  --red-bg: rgba(248, 113, 113, 0.1);
-  --purple: #a78bfa;
-  --purple-bg: rgba(167, 139, 250, 0.1);
-  --orange: #fbbf24;
-  --cyan: #22d3ee;
-  --t: #e2e8f0;
-  --td: #94a3b8;
-  --tm: #64748b;
+  --bg: #ffffff;
+  --s1: #f8f9fa;
+  --s2: #f1f3f5;
+  --s3: #e9ecef;
+  --s4: #dee2e6;
+  --b1: #e2e5e9;
+  --b2: #ced4da;
+  --b3: #adb5bd;
+  --gold: #d4960a;
+  --gold-dim: #b8820a;
+  --gold-bg: rgba(212, 150, 10, 0.06);
+  --gold-bg2: rgba(212, 150, 10, 0.12);
+  --blue: #2563eb;
+  --blue-bg: rgba(37, 99, 235, 0.06);
+  --green: #16a34a;
+  --green-bg: rgba(22, 163, 74, 0.06);
+  --red: #dc2626;
+  --red-bg: rgba(220, 38, 38, 0.06);
+  --purple: #7c3aed;
+  --purple-bg: rgba(124, 58, 237, 0.06);
+  --orange: #d97706;
+  --cyan: #0891b2;
+  --t: #1e293b;
+  --td: #64748b;
+  --tm: #94a3b8;
   --tw: #ffffff;
   --radius: 12px;
   --radius-sm: 8px;
   --radius-xs: 6px;
-  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
   --phone-max: 430px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -42,7 +42,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
-  background: var(--bg);
+  background: var(--s1);
   color: var(--t);
   font-family: 'IBM Plex Sans Thai', -apple-system, sans-serif;
   font-size: 14px;
@@ -115,7 +115,7 @@ html, body {
 .login-logo {
   font-size: 56px;
   margin-bottom: 8px;
-  filter: drop-shadow(0 0 20px rgba(245,200,66,0.3));
+  filter: drop-shadow(0 0 20px rgba(212,150,10,0.2));
 }
 .login-brand {
   font-size: 22px;
@@ -167,7 +167,7 @@ html, body {
 .input-field::placeholder { color: var(--tm); }
 .input-field:focus {
   border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgba(245,200,66,0.12);
+  box-shadow: 0 0 0 3px rgba(212,150,10,0.12);
 }
 .input-field.error { border-color: var(--red); }
 
@@ -210,9 +210,9 @@ select.input-field {
 
 .btn-gold {
   background: var(--gold);
-  color: #0a0a0a;
+  color: #ffffff;
 }
-.btn-gold:hover { background: #e6b930; }
+.btn-gold:hover { background: #b8820a; }
 .btn-gold:active { background: var(--gold-dim); }
 
 .btn-outline {
@@ -232,7 +232,7 @@ select.input-field {
 .btn-danger {
   background: var(--red-bg);
   color: var(--red);
-  border: 1px solid rgba(248,113,113,0.2);
+  border: 1px solid rgba(220,38,38,0.15);
 }
 
 .btn-sm { padding: 8px 14px; font-size: 12px; }
@@ -241,7 +241,7 @@ select.input-field {
 /* ═══ ERROR MESSAGE ═══ */
 .error-msg {
   background: var(--red-bg);
-  border: 1px solid rgba(248,113,113,0.2);
+  border: 1px solid rgba(220,38,38,0.15);
   border-radius: var(--radius-sm);
   padding: 10px 14px;
   color: var(--red);
@@ -385,8 +385,8 @@ select.input-field {
 
 /* Admin card */
 .admin-card {
-  background: linear-gradient(135deg, rgba(167,139,250,0.08), rgba(245,200,66,0.05));
-  border: 1.5px solid rgba(167,139,250,0.2);
+  background: linear-gradient(135deg, rgba(124,58,237,0.04), rgba(212,150,10,0.03));
+  border: 1.5px solid rgba(124,58,237,0.15);
   border-radius: var(--radius);
   padding: 16px;
   margin: 0 16px 16px;
@@ -448,7 +448,7 @@ select.input-field {
 }
 .admin-tab.active {
   background: var(--gold);
-  color: #0a0a0a;
+  color: #ffffff;
   border-color: var(--gold);
   font-weight: 600;
 }
@@ -649,15 +649,15 @@ select.input-field {
   text-align: center;
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
-.toast.success { background: var(--green); color: #0a0a0a; }
+.toast.success { background: var(--green); color: #ffffff; }
 .toast.error { background: var(--red); color: #fff; }
-.toast.info { background: var(--blue); color: #0a0a0a; }
+.toast.info { background: var(--blue); color: #ffffff; }
 
 /* ═══ LOADER ═══ */
 .loader-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10,10,10,0.6);
+  background: rgba(0,0,0,0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -688,11 +688,11 @@ select.input-field {
 }
 .btn-approve {
   flex: 1; background: var(--green-bg); color: var(--green);
-  border: 1px solid rgba(74,222,128,0.2);
+  border: 1px solid rgba(22,163,74,0.15);
 }
 .btn-reject {
   flex: 1; background: var(--red-bg); color: var(--red);
-  border: 1px solid rgba(248,113,113,0.2);
+  border: 1px solid rgba(220,38,38,0.15);
 }
 
 /* ═══ SCREEN FADE ANIMATION ═══ */

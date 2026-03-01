@@ -7,7 +7,7 @@
 
 const API = (() => {
   // ⚠️ CHANGE THIS after deploying Apps Script as Web App
-  let BASE_URL = localStorage.getItem('spg_api_url') || 'https://script.google.com/macros/s/AKfycbwMT-1g6fok_s7P454Lk-4zxTNeVD2zGZvFQyhua7kUFOuWAo0VsWcIXRxYH3GpQgSk/exec';
+let BASE_URL = localStorage.getItem('spg_api_url') || 'https://script.google.com/macros/s/AKfycbwMT-1g6fok_s7P454Lk-4zxTNeVD2zGZvFQyhua7kUFOuWAo0VsWcIXRxYH3GpQgSk/exec';
 
   // Session storage
   const SESSION_KEY = 'spg_session';
@@ -120,7 +120,7 @@ const API = (() => {
     createUser: (data) => post('create_user', { ...tokenBody(), ...data }),
 
     // EP-06: Switch User
-    switchUser: (account_id, user_id) => post('switch_user', { account_id, user_id }),
+    switchUser: (account_id, user_id, pin) => post('switch_user', { account_id, user_id, pin }),
 
     // EP-07: Logout
     logout: () => post('logout', tokenBody()),

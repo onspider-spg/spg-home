@@ -24,27 +24,14 @@ const Screens = (() => {
 // S1: LOGIN
 // ════════════════════════════════
 function renderLogin() {
-  const needsConfig = !API.getBaseUrl();
-  
   return `
   <div class="screen screen-enter">
     <div class="login-screen">
       <div class="login-logo">🎨</div>
       <div class="login-brand">SIAM PALETTE GROUP</div>
-      <div class="login-sub">Siam Palette Group — Management System</div>
+      <div class="login-sub">SPG APP HOME</div>
 
-      ${needsConfig ? `
-      <div class="login-form" id="config-form">
-        <div class="input-group">
-          <label>API URL (Apps Script Web App)</label>
-          <input type="url" class="input-field" id="inp-api-url" 
-                 placeholder="https://script.google.com/macros/s/…/exec">
-        </div>
-        <button class="btn btn-outline btn-full" onclick="Screens.saveApiUrl()">บันทึก URL</button>
-      </div>
-      ` : ''}
-
-      <form class="login-form" id="login-form" onsubmit="Screens.doLogin(event)" ${needsConfig ? 'style="display:none"' : ''}>
+      <form class="login-form" id="login-form" onsubmit="Screens.doLogin(event)">
         <div class="input-group">
           <label>ชื่อผู้ใช้</label>
           <input type="text" class="input-field" id="inp-user" placeholder="username" autocomplete="username" autofocus>
@@ -57,13 +44,6 @@ function renderLogin() {
         <button type="submit" class="btn btn-gold btn-full" id="btn-login">เข้าสู่ระบบ</button>
         <div class="link-text" onclick="App.go('register')">สมัครสมาชิกใหม่</div>
       </form>
-
-      ${needsConfig ? '' : `
-      <div style="margin-top:16px">
-// ════════════════════════════════
-//         <div class="link-text" onclick="Screens.showApiConfig()" style="font-size:11px;color:var(--tm)">⚙️ ตั้งค่า API URL</div>
-// ════════════════════════════════
-      </div>`}
     </div>
   </div>`;
 }

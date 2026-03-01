@@ -130,6 +130,9 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://script.google.com
 
     // EP-09: Get Profile
     getProfile: () => post('get_profile', tokenBody()),
+    updateProfile: (data) => post('update_profile', tokenBody(data)),
+    changePin: (data) => post('change_pin', tokenBody(data)),
+
 
     // EP-10: Admin Get Accounts
     adminGetAccounts: (filters = {}) => post('admin_get_accounts', tokenBody(filters)),

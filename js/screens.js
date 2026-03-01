@@ -174,9 +174,12 @@ async function selectStaff(userId) {
   // Try without PIN first — if PIN_REQUIRED, show popup
   App.showLoader();
   try {
+
     const data = await API.switchUser(acc.account_id, userId);
     API.saveSession(data);
+    App.hideLoader();
     App.go('dashboard');
+
   } catch (err) {
     App.hideLoader();
     if (err.message && (err.message.includes('PIN') || err.message.includes('pin'))) {
@@ -221,13 +224,16 @@ async function submitPin(userId) {
   
   App.showLoader();
   try {
+
     const data = await API.switchUser(acc.account_id, userId, pin);
     document.getElementById('pin-modal')?.remove();
     API.saveSession(data);
+    App.hideLoader();
     App.go('dashboard');
   } catch (err) {
     App.hideLoader();
     showFieldError('pin-error', err.message || 'PIN ไม่ถูกต้อง');
+
   }
 }
 

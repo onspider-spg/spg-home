@@ -171,15 +171,63 @@ async function selectStaff(userId) {
   const acc = API.getAccountTemp();
   if (!acc) return;
 
+  // Try without PIN first — if PIN_REQUIRED, show popup
   App.showLoader();
   try {
     const data = await API.switchUser(acc.account_id, userId);
     API.saveSession(data);
     App.go('dashboard');
   } catch (err) {
-    App.toast(err.message, 'error');
-  } finally {
     App.hideLoader();
+    if (err.message && (err.message.includes('PIN') || err.message.includes('pin'))) {
+      showPinPopup(userId);
+    } else {
+      App.toast(err.message, 'error');
+    }
+  }
+}
+
+function showPinPopup(userId) {
+  const html = `
+  <div class="modal-overlay" id="pin-modal" onclick="if(event.target===this)this.remove()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">🔐 กรอก PIN</div>
+      <div class="input-group">
+        <label>PIN 6 หลัก</label>
+        <input type="password" class="input-field" id="inp-pin" 
+               maxlength="6" inputmode="numeric" pattern="[0-9]{6}" 
+               placeholder="••••••" autofocus>
+      </div>
+      <div class="error-msg" id="pin-error"></div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-gold btn-full" onclick="Screens.submitPin('${userId}')">ยืนยัน</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  setTimeout(() => document.getElementById('inp-pin')?.focus(), 100);
+}
+
+async function submitPin(userId) {
+  const pin = document.getElementById('inp-pin').value.trim();
+  if (!pin || pin.length !== 6) {
+    showFieldError('pin-error', 'กรุณากรอก PIN 6 หลัก');
+    return;
+  }
+  
+  const acc = API.getAccountTemp();
+  if (!acc) return;
+  
+  App.showLoader();
+  try {
+    const data = await API.switchUser(acc.account_id, userId, pin);
+    document.getElementById('pin-modal')?.remove();
+    API.saveSession(data);
+    App.go('dashboard');
+  } catch (err) {
+    App.hideLoader();
+    showFieldError('pin-error', err.message || 'PIN ไม่ถูกต้อง');
   }
 }
 
@@ -206,6 +254,11 @@ function renderNewStaff() {
           <label>ชื่อ-นามสกุล</label>
           <input type="text" class="input-field" id="inp-staff-full" placeholder="ชื่อจริง นามสกุล" required>
         </div>
+        <div class="input-group">
+          <label>PIN 6 หลัก (ใช้ยืนยันตอนเลือกชื่อ)</label>
+          <input type="password" class="input-field" id="inp-staff-pin" 
+                 placeholder="เช่น 123456" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required>
+        </div>
         <div class="error-msg" id="staff-error"></div>
         <button type="submit" class="btn btn-gold btn-full">เพิ่มชื่อ</button>
       </form>
@@ -218,13 +271,15 @@ async function doCreateStaff(e) {
   const acc = API.getAccountTemp();
   if (!acc) return;
 
-  const display_name = $('inp-staff-nick').value.trim();
+const display_name = $('inp-staff-nick').value.trim();
   const full_name = $('inp-staff-full').value.trim();
+  const pin = $('inp-staff-pin').value.trim();
   if (!display_name || !full_name) return showFieldError('staff-error', 'กรุณากรอกข้อมูลให้ครบ');
+  if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) return showFieldError('staff-error', 'PIN ต้องเป็นตัวเลข 6 หลัก');
 
   App.showLoader();
   try {
-    const data = await API.createUser({ account_id: acc.account_id, display_name, full_name });
+   const data = await API.createUser({ account_id: acc.account_id, display_name, full_name, pin });
     App.toast(`เพิ่ม "${display_name}" สำเร็จ`, 'success');
     // Auto-select the new user
     await selectStaff(data.user_id);
@@ -460,7 +515,7 @@ function formatShortDate(iso) {
 return {
   $, esc, showFieldError, hideError, formatDate, formatShortDate,
   renderLogin, doLogin, saveApiUrl, showApiConfig,
-  renderStaffSelect, loadStaffList, selectStaff,
+  renderStaffSelect, loadStaffList, selectStaff, showPinPopup, submitPin,
   renderNewStaff, doCreateStaff,
   renderDashboard, loadModules, launchModule,
   renderProfile, loadProfile, doLogout, switchUserFlow

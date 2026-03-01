@@ -29,7 +29,7 @@ function renderLogin() {
   return `
   <div class="screen screen-enter">
     <div class="login-screen">
-      <div class="login-logo">🏛️</div>
+      <div class="login-logo">🎨</div>
       <div class="login-brand">SIAM PALETTE GROUP</div>
       <div class="login-sub">SPG App Home</div>
 

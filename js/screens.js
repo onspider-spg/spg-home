@@ -31,7 +31,7 @@ function renderLogin() {
     <div class="login-screen">
       <div class="login-logo">🎨</div>
       <div class="login-brand">SIAM PALETTE GROUP</div>
-      <div class="login-sub">SPG App Home</div>
+      <div class="login-sub">Siam Palette Group — Management System</div>
 
       ${needsConfig ? `
       <div class="login-form" id="config-form">
@@ -60,7 +60,9 @@ function renderLogin() {
 
       ${needsConfig ? '' : `
       <div style="margin-top:16px">
-        <div class="link-text" onclick="Screens.showApiConfig()" style="font-size:11px;color:var(--tm)">⚙️ ตั้งค่า API URL</div>
+// ════════════════════════════════
+//         <div class="link-text" onclick="Screens.showApiConfig()" style="font-size:11px;color:var(--tm)">⚙️ ตั้งค่า API URL</div>
+// ════════════════════════════════
       </div>`}
     </div>
   </div>`;

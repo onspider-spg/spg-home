@@ -260,6 +260,10 @@ function renderNewStaff() {
           <label>ชื่อ-นามสกุล</label>
           <input type="text" class="input-field" id="inp-staff-full" placeholder="ชื่อจริง นามสกุล" required>
         </div>
+          <div class="input-group">
+          <label>เบอร์โทร</label>
+          <input type="tel" class="input-field" id="inp-staff-phone" placeholder="0812345678" inputmode="tel">
+        </div>
         <div class="input-group">
           <label>PIN 6 หลัก (ใช้ยืนยันตอนเลือกชื่อ)</label>
           <input type="password" class="input-field" id="inp-staff-pin" 

@@ -29,7 +29,7 @@ function renderLogin() {
     <div class="login-screen">
       <div class="login-logo">🎨</div>
       <div class="login-brand">SIAM PALETTE GROUP</div>
-      <div class="login-sub">SPG APP HOME</div>
+      <div class="login-sub">Siam Palette Group — Management System</div>
 
       <form class="login-form" id="login-form" onsubmit="Screens.doLogin(event)">
         <div class="input-group">

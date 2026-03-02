@@ -922,3 +922,80 @@ select.input-field {
     max-width: 1100px;
   }
 }
+
+/* ─── F3: Modal close button ─── */
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--tm);
+  border-radius: 50%;
+  transition: background 0.15s;
+}
+.modal-close:hover {
+  background: var(--hover);
+}
+
+/* ─── A2: Text logo instead of emoji ─── */
+.login-logo-text {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+
+/* ─── D1: Permission dropdown ─── */
+.perm-select {
+  font-size: 10px;
+  padding: 3px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--tx);
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+}
+.perm-select:focus {
+  outline: 1px solid var(--gold);
+}
+.perm-select.perm-no_access { color: #94a3b8; }
+.perm-select.perm-view_only { color: #3b82f6; }
+.perm-select.perm-edit { color: #22c55e; }
+.perm-select.perm-admin { color: #f59e0b; }
+.perm-select.perm-super_admin { color: #ef4444; }
+
+/* ─── C1+E1: Admin toolbar (search/sort bar) ─── */
+.admin-toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px;
+  align-items: center;
+}
+.admin-toolbar .input-field {
+  margin: 0;
+}
+.input-sm {
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+}
+.admin-toolbar .input-sm:first-child {
+  flex: 1;
+}
+.admin-toolbar select.input-sm {
+  width: auto;
+  min-width: 80px;
+}
+
+/* ─── F4: Inline profile edit fields ─── */
+.profile-row .input-field.input-sm {
+  margin-top: 4px;
+}

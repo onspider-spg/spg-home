@@ -16,48 +16,44 @@ function renderRegister() {
   <div class="screen screen-enter">
     <div class="header-bar">
       <button class="back-btn" onclick="App.go('login')">←</button>
-      <div class="header-title">สมัครสมาชิก</div>
+      <div class="header-title">Register</div>
     </div>
     <div class="screen-body">
       <form class="reg-form" onsubmit="Screens.doRegister(event)">
         <div class="input-group">
-          <label>ชื่อผู้ใช้ (Username)</label>
-          <input type="text" class="input-field" id="inp-reg-user" placeholder="ตัวอักษร ตัวเลข จุด _ เท่านั้น" required>
+          <label>Email *</label>
+          <input type="email" class="input-field" id="inp-reg-email" placeholder="email@example.com" required>
         </div>
         <div class="input-group">
-          <label>รหัสผ่าน (8 ตัวขึ้นไป)</label>
+          <label>Password (min 8 characters) *</label>
           <input type="password" class="input-field" id="inp-reg-pass" placeholder="••••••••" required>
         </div>
         <div class="input-group">
-          <label>ชื่อ-นามสกุล</label>
-          <input type="text" class="input-field" id="inp-reg-full" placeholder="ชื่อจริง นามสกุล" required>
+          <label>Full Name *</label>
+          <input type="text" class="input-field" id="inp-reg-full" placeholder="First Last" required>
         </div>
         <div class="input-group">
-          <label>ชื่อเล่น (แสดงในระบบ)</label>
-          <input type="text" class="input-field" id="inp-reg-nick" placeholder="เช่น น้องมิ้น" required>
+          <label>Display Name *</label>
+          <input type="text" class="input-field" id="inp-reg-nick" placeholder="e.g. Mint" required>
         </div>
         <div class="input-group">
-          <label>อีเมล (ไม่บังคับ)</label>
-          <input type="email" class="input-field" id="inp-reg-email" placeholder="email@example.com">
+          <label>Phone *</label>
+          <input type="tel" class="input-field" id="inp-reg-phone" placeholder="0412345678" required>
         </div>
         <div class="input-group">
-          <label>เบอร์โทร (ไม่บังคับ)</label>
-          <input type="tel" class="input-field" id="inp-reg-phone" placeholder="0812345678">
+          <label>Store</label>
+          <select class="input-field" id="inp-reg-store"><option value="">Loading...</option></select>
         </div>
         <div class="input-group">
-          <label>ร้านที่ต้องการสมัคร</label>
-          <select class="input-field" id="inp-reg-store"><option value="">กำลังโหลด...</option></select>
+          <label>Department</label>
+          <select class="input-field" id="inp-reg-dept"><option value="">Loading...</option></select>
         </div>
         <div class="input-group">
-          <label>แผนก</label>
-          <select class="input-field" id="inp-reg-dept"><option value="">กำลังโหลด...</option></select>
-        </div>
-        <div class="input-group">
-          <label>หมายเหตุ (ไม่บังคับ)</label>
-          <textarea class="input-field" id="inp-reg-note" placeholder="เช่น ตำแหน่งที่สมัคร"></textarea>
+          <label>Note (optional)</label>
+          <textarea class="input-field" id="inp-reg-note" placeholder="e.g. Position applying for"></textarea>
         </div>
         <div class="error-msg" id="reg-error"></div>
-        <button type="submit" class="btn btn-gold btn-full" id="btn-reg">ส่งคำขอสมัคร</button>
+        <button type="submit" class="btn btn-gold btn-full" id="btn-reg">Submit Registration</button>
       </form>
     </div>
   </div>`;
@@ -70,34 +66,36 @@ async function loadRegisterDropdowns() {
     const deptEl = $('inp-reg-dept');
     
     if (storeEl) {
-      storeEl.innerHTML = '<option value="">-- เลือกร้าน --</option>' +
+      storeEl.innerHTML = '<option value="">-- Select Store --</option>' +
         stores.stores.map(s => `<option value="${esc(s.store_id)}">${esc(s.store_name_th || s.store_name)}</option>`).join('');
     }
     if (deptEl) {
-      deptEl.innerHTML = '<option value="">-- เลือกแผนก --</option>' +
+      deptEl.innerHTML = '<option value="">-- Select Department --</option>' +
         depts.departments.map(d => `<option value="${esc(d.dept_id)}">${esc(d.dept_name_th || d.dept_name)}</option>`).join('');
     }
   } catch (err) {
-    App.toast('โหลดข้อมูลร้าน/แผนกไม่สำเร็จ', 'error');
+    App.toast('Failed to load store/department data', 'error');
   }
 }
 
 async function doRegister(e) {
   e.preventDefault();
+  const email = $('inp-reg-email').value.trim();
+  const phone = $('inp-reg-phone').value.trim();
   const data = {
-    username: $('inp-reg-user').value.trim(),
+    username: email,
     password: $('inp-reg-pass').value,
     full_name: $('inp-reg-full').value.trim(),
     display_name: $('inp-reg-nick').value.trim(),
-    email: $('inp-reg-email').value.trim(),
-    phone: $('inp-reg-phone').value.trim(),
+    email: email,
+    phone: phone,
     requested_store_id: $('inp-reg-store').value,
     requested_dept_id: $('inp-reg-dept').value,
     note: $('inp-reg-note').value.trim()
   };
 
-  if (!data.username || !data.password || !data.full_name || !data.display_name) {
-    return showFieldError('reg-error', 'กรุณากรอกข้อมูลที่จำเป็นให้ครบ');
+  if (!email || !data.password || !data.full_name || !data.display_name || !phone) {
+    return showFieldError('reg-error', 'Please fill in all required fields');
   }
 
   App.showLoader();
@@ -119,15 +117,15 @@ function renderPending(params = {}) {
   return `
   <div class="screen screen-enter">
     <div class="pending-screen">
-      <div class="pending-icon">⏳</div>
-      <div class="pending-title">รออนุมัติ</div>
+      <div class="pending-icon" style="font-size:40px;color:var(--gold)">◷</div>
+      <div class="pending-title">Pending Approval</div>
       <div class="pending-msg">
-        คำขอสมัครของคุณถูกส่งแล้ว<br>
-        ${rid ? `หมายเลข: <strong>${esc(rid)}</strong><br>` : ''}
-        กรุณารอ Admin อนุมัติ<br>
-        จะสามารถเข้าใช้งานได้หลังจากอนุมัติแล้ว
+        Your registration has been submitted.<br>
+        ${rid ? `Reference: <strong>${esc(rid)}</strong><br>` : ''}
+        Please wait for admin approval.<br>
+        You can sign in once approved.
       </div>
-      <button class="btn btn-outline" style="margin-top:24px" onclick="App.go('login')">กลับหน้า Login</button>
+      <button class="btn btn-outline" style="margin-top:24px" onclick="App.go('login')">Back to Sign In</button>
     </div>
   </div>`;
 }
@@ -148,11 +146,11 @@ function renderAdmin() {
       <div class="header-title">Admin Panel</div>
     </div>
     <div class="admin-tabs">
-      <div class="admin-tab ${adminActiveTab==='accounts'?'active':''}" onclick="Screens.adminTab('accounts')">👥 บัญชี</div>
-      <div class="admin-tab ${adminActiveTab==='permissions'?'active':''}" onclick="Screens.adminTab('permissions')">🔐 สิทธิ์</div>
-      <div class="admin-tab ${adminActiveTab==='registrations'?'active':''}" onclick="Screens.adminTab('registrations')">📝 คำขอ</div>
-      <div class="admin-tab ${adminActiveTab==='bridge'?'active':''}" onclick="Screens.adminTab('bridge')">🔗 Bridge</div>
-      <div class="admin-tab" onclick="App.go('audit')">📋 Audit</div>
+      <div class="admin-tab ${adminActiveTab==='accounts'?'active':''}" onclick="Screens.adminTab('accounts')">Accounts</div>
+      <div class="admin-tab ${adminActiveTab==='permissions'?'active':''}" onclick="Screens.adminTab('permissions')">Permissions</div>
+      <div class="admin-tab ${adminActiveTab==='registrations'?'active':''}" onclick="Screens.adminTab('registrations')">Requests</div>
+      <div class="admin-tab ${adminActiveTab==='bridge'?'active':''}" onclick="Screens.adminTab('bridge')">Bridge</div>
+      <div class="admin-tab" onclick="App.go('audit')">Audit</div>
     </div>
     <div class="screen-body" id="admin-content">
       <div style="text-align:center;padding:30px;color:var(--tm)">กำลังโหลด...</div>
@@ -186,33 +184,67 @@ async function loadAdminContent() {
 }
 
 // ─── Accounts Tab ───
+let _allAccounts = [];
+
 async function loadAccounts(container) {
-  const data = await API.adminGetAccounts({ page_size: 50 });
-  
-  if (!data.accounts || data.accounts.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-text">ไม่พบบัญชี</div></div>`;
-    return;
-  }
+  const data = await API.adminGetAccounts({ page_size: 200 });
+  _allAccounts = data.accounts || [];
+  renderAccountList(container);
+}
 
-  let html = `<div style="padding:8px 16px;text-align:right">
-    <button class="btn btn-gold btn-sm" onclick="Screens.showCreateAccount()">+ สร้างบัญชีใหม่</button>
-  </div>`;
+function renderAccountList(container) {
+  const q = $('acc-search')?.value?.toLowerCase() || '';
+  const sortBy = $('acc-sort')?.value || 'name';
 
-  data.accounts.forEach(acc => {
-    const badge = acc.status === 'approved' ? 'badge-approved' : acc.status === 'pending' ? 'badge-pending' : 'badge-suspended';
-    html += `
-    <div class="list-item" onclick="App.go('account-detail',{account_id:'${esc(acc.account_id)}'})">
-      <div class="item-avatar">${acc.account_type === 'group' ? '👥' : '👤'}</div>
-      <div class="item-info">
-        <div class="item-name">${esc(acc.display_label || acc.username)}</div>
-        <div class="item-meta">${esc(acc.account_id)} · ${esc(acc.tier_id)} · ${esc(acc.account_type)} · ${acc.user_count} users</div>
-      </div>
-      <span class="item-badge ${badge}">${esc(acc.status)}</span>
-    </div>`;
+  let filtered = _allAccounts.filter(acc => {
+    if (!q) return true;
+    return (acc.display_label || '').toLowerCase().includes(q)
+      || (acc.username || '').toLowerCase().includes(q)
+      || (acc.account_id || '').toLowerCase().includes(q)
+      || (acc.tier_id || '').toLowerCase().includes(q);
   });
 
-  html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">ทั้งหมด ${data.total} บัญชี</div>`;
+  filtered.sort((a, b) => {
+    if (sortBy === 'name') return (a.display_label || '').localeCompare(b.display_label || '');
+    if (sortBy === 'tier') return (a.tier_id || '').localeCompare(b.tier_id || '');
+    if (sortBy === 'status') return (a.status || '').localeCompare(b.status || '');
+    if (sortBy === 'created') return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    return 0;
+  });
+
+  let html = `<div class="admin-toolbar">
+    <input type="text" class="input-field input-sm" id="acc-search" placeholder="Search..." value="${esc(q)}" oninput="Screens.filterAccounts()">
+    <select class="input-field input-sm" id="acc-sort" onchange="Screens.filterAccounts()">
+      <option value="name" ${sortBy==='name'?'selected':''}>Name</option>
+      <option value="tier" ${sortBy==='tier'?'selected':''}>Tier</option>
+      <option value="status" ${sortBy==='status'?'selected':''}>Status</option>
+      <option value="created" ${sortBy==='created'?'selected':''}>Newest</option>
+    </select>
+    <button class="btn btn-gold btn-sm" onclick="Screens.showCreateAccount()">+ New</button>
+  </div>`;
+
+  if (filtered.length === 0) {
+    html += '<div class="empty-state"><div class="empty-text">No accounts match</div></div>';
+  } else {
+    filtered.forEach(acc => {
+      const badge = acc.status === 'approved' ? 'badge-approved' : acc.status === 'pending' ? 'badge-pending' : 'badge-suspended';
+      html += `
+      <div class="list-item" onclick="App.go('account-detail',{account_id:'${esc(acc.account_id)}'})">
+        <div class="item-info" style="flex:1">
+          <div class="item-name">${esc(acc.display_label || acc.username)}</div>
+          <div class="item-meta">${esc(acc.account_id)} · ${esc(acc.tier_id)} · ${esc(acc.account_type)} · ${acc.user_count} users</div>
+        </div>
+        <span class="item-badge ${badge}">${esc(acc.status)}</span>
+      </div>`;
+    });
+    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${filtered.length} of ${_allAccounts.length} accounts</div>`;
+  }
   container.innerHTML = html;
+}
+
+function filterAccounts() {
+  const container = $('admin-content');
+  if (container) renderAccountList(container);
 }
 
 // ─── Create Account Modal ───
@@ -221,7 +253,7 @@ function showCreateAccount() {
   <div class="modal-overlay" id="modal-create-acc" onclick="if(event.target===this)this.remove()">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
-      <div class="modal-title">สร้างบัญชีใหม่</div>
+      <div class="modal-title">Create Account</div>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div class="input-group"><label>Username</label><input class="input-field" id="inp-ca-user" placeholder="username"></div>
         <div class="input-group"><label>Password</label><input class="input-field" type="password" id="inp-ca-pass" placeholder="8 ตัวขึ้นไป"></div>
@@ -267,7 +299,7 @@ async function doCreateAccount() {
   try {
     await API.adminCreateAccount(data);
     document.getElementById('modal-create-acc')?.remove();
-    App.toast('สร้างบัญชีสำเร็จ', 'success');
+    App.toast('Account created', 'success');
     loadAdminContent();
   } catch (err) {
     showFieldError('ca-error', err.message);
@@ -279,6 +311,7 @@ async function doCreateAccount() {
 // ─── Permissions Tab ───
 async function loadPermissions(container) {
   const data = await API.adminGetPermissions();
+  const PERM_OPTIONS = ['no_access', 'view_only', 'edit', 'admin', 'super_admin'];
   
   let headerHtml = '<th>Module</th>';
   data.tiers.forEach(t => {
@@ -291,7 +324,12 @@ async function loadPermissions(container) {
     data.tiers.forEach(t => {
       const level = m.permissions[t.tier_id] || 'no_access';
       const editable = t.tier_level > 1;
-      bodyHtml += `<td><span class="perm-cell perm-${level}" ${editable ? `onclick="Screens.cyclePerm('${esc(m.module_id)}','${esc(t.tier_id)}','${level}')"` : ''}>${level.replace('_', ' ')}</span></td>`;
+      if (editable) {
+        let opts = PERM_OPTIONS.map(p => `<option value="${p}" ${p===level?'selected':''}>${p.replace('_',' ')}</option>`).join('');
+        bodyHtml += `<td><select class="perm-select perm-${level}" onchange="Screens.setPerm('${esc(m.module_id)}','${esc(t.tier_id)}',this.value)">${opts}</select></td>`;
+      } else {
+        bodyHtml += `<td><span class="perm-cell perm-${level}">${level.replace('_', ' ')}</span></td>`;
+      }
     });
     bodyHtml += '</tr>';
   });
@@ -302,19 +340,13 @@ async function loadPermissions(container) {
       <thead><tr>${headerHtml}</tr></thead>
       <tbody>${bodyHtml}</tbody>
     </table>
-  </div>
-  <div style="padding:12px 16px;font-size:11px;color:var(--tm)">คลิกที่ช่อง (ยกเว้น T1) เพื่อเปลี่ยนสิทธิ์</div>`;
+  </div>`;
 }
 
-const PERM_CYCLE = ['no_access', 'view_only', 'edit', 'admin', 'super_admin'];
-
-async function cyclePerm(moduleId, tierId, current) {
-  const idx = PERM_CYCLE.indexOf(current);
-  const next = PERM_CYCLE[(idx + 1) % PERM_CYCLE.length];
-
+async function setPerm(moduleId, tierId, newLevel) {
   try {
-    await API.adminUpdatePermission(moduleId, tierId, next);
-    App.toast(`${tierId} → ${next}`, 'success');
+    await API.adminUpdatePermission(moduleId, tierId, newLevel);
+    App.toast(`${tierId} → ${newLevel.replace('_',' ')}`, 'success');
     loadAdminContent();
   } catch (err) {
     App.toast(err.message, 'error');
@@ -322,29 +354,58 @@ async function cyclePerm(moduleId, tierId, current) {
 }
 
 // ─── Registrations Tab ───
+let _allRegs = [];
+
 async function loadRegistrations(container) {
-  const data = await API.adminGetRegistrations({ page_size: 50 });
+  const data = await API.adminGetRegistrations({ page_size: 200 });
+  _allRegs = data.requests || [];
+  renderRegList(container);
+}
 
-  if (!data.requests || data.requests.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📝</div><div class="empty-text">ไม่มีคำขอลงทะเบียน</div></div>`;
-    return;
-  }
+function renderRegList(container) {
+  const q = $('reg-search')?.value?.toLowerCase() || '';
+  const statusFilter = $('reg-status')?.value || 'all';
 
-  let html = '';
-  data.requests.forEach(r => {
-    const badge = r.status === 'pending' ? 'badge-pending' : r.status === 'approved' ? 'badge-approved' : 'badge-rejected';
-    html += `
-    <div class="list-item" onclick="App.go('reg-review',{request_id:'${esc(r.request_id)}'})">
-      <div class="item-avatar">📝</div>
-      <div class="item-info">
-        <div class="item-name">${esc(r.display_name)} (${esc(r.username)})</div>
-        <div class="item-meta">${esc(r.requested_store_id || '-')} · ${esc(r.requested_dept_id || '-')} · ${formatShortDate(r.submitted_at)}</div>
-      </div>
-      <span class="item-badge ${badge}">${esc(r.status)}</span>
-    </div>`;
+  let filtered = _allRegs.filter(r => {
+    if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+    if (!q) return true;
+    return (r.display_name || '').toLowerCase().includes(q)
+      || (r.username || '').toLowerCase().includes(q)
+      || (r.requested_store_id || '').toLowerCase().includes(q);
   });
 
+  let html = `<div class="admin-toolbar">
+    <input type="text" class="input-field input-sm" id="reg-search" placeholder="Search..." value="${esc(q)}" oninput="Screens.filterRegs()">
+    <select class="input-field input-sm" id="reg-status" onchange="Screens.filterRegs()">
+      <option value="all" ${statusFilter==='all'?'selected':''}>All</option>
+      <option value="pending" ${statusFilter==='pending'?'selected':''}>Pending</option>
+      <option value="approved" ${statusFilter==='approved'?'selected':''}>Approved</option>
+      <option value="rejected" ${statusFilter==='rejected'?'selected':''}>Rejected</option>
+    </select>
+  </div>`;
+
+  if (filtered.length === 0) {
+    html += '<div class="empty-state"><div class="empty-text">No requests match</div></div>';
+  } else {
+    filtered.forEach(r => {
+      const badge = r.status === 'pending' ? 'badge-pending' : r.status === 'approved' ? 'badge-approved' : 'badge-rejected';
+      html += `
+      <div class="list-item" onclick="App.go('reg-review',{request_id:'${esc(r.request_id)}'})">
+        <div class="item-info" style="flex:1">
+          <div class="item-name">${esc(r.display_name)} (${esc(r.username)})</div>
+          <div class="item-meta">${esc(r.requested_store_id || '-')} · ${esc(r.requested_dept_id || '-')} · ${formatShortDate(r.submitted_at)}</div>
+        </div>
+        <span class="item-badge ${badge}">${esc(r.status)}</span>
+      </div>`;
+    });
+    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${filtered.length} of ${_allRegs.length} requests</div>`;
+  }
   container.innerHTML = html;
+}
+
+function filterRegs() {
+  const container = $('admin-content');
+  if (container) renderRegList(container);
 }
 
 // ─── Bridge Tab ───
@@ -352,7 +413,7 @@ async function loadBridge(container) {
   const data = await API.adminGetBridgeConfig();
 
   if (!data.bridges || data.bridges.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔗</div><div class="empty-text">ยังไม่มี Data Bridge</div></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-text">No Data Bridges configured</div></div>`;
     return;
   }
 
@@ -376,7 +437,7 @@ async function loadBridge(container) {
 async function toggleBridge(bridgeId, enable) {
   try {
     await API.adminUpdateBridge(bridgeId, enable);
-    App.toast(enable ? 'เปิด Bridge แล้ว' : 'ปิด Bridge แล้ว', 'success');
+    App.toast(enable ? 'Bridge enabled' : 'Bridge disabled', 'success');
     loadAdminContent();
   } catch (err) {
     App.toast(err.message, 'error');
@@ -393,7 +454,7 @@ function renderAccountDetail(params = {}) {
   <div class="screen screen-enter">
     <div class="header-bar">
       <button class="back-btn" onclick="App.go('admin')">←</button>
-      <div class="header-title">รายละเอียดบัญชี</div>
+      <div class="header-title">Account Detail</div>
     </div>
     <div class="screen-body" id="acc-detail-content">
       <div style="text-align:center;padding:30px;color:var(--tm)">กำลังโหลด...</div>
@@ -406,9 +467,9 @@ async function loadAccountDetail(accountId) {
   if (!content) return;
 
   try {
-    const data = await API.adminGetAccounts({ search: accountId, page_size: 1 });
-    const acc = data.accounts?.find(a => a.account_id === accountId);
-    if (!acc) { content.innerHTML = '<div class="empty-state">ไม่พบบัญชี</div>'; return; }
+    const data = await API.adminGetAccounts({ search: accountId, page_size: 50 });
+    const acc = data.accounts?.find(a => a.account_id === accountId || a.username === accountId);
+    if (!acc) { content.innerHTML = '<div class="empty-state">Account not found</div>'; return; }
     _accountDetail = acc;
 
     content.innerHTML = `
@@ -418,30 +479,89 @@ async function loadAccountDetail(accountId) {
       <div class="sub">${esc(acc.username)} · ${esc(acc.account_id)}</div>
     </div>
     <div class="profile-section">
-      <div class="profile-row"><span class="label">ประเภท</span><span class="value">${esc(acc.account_type)}</span></div>
+      <div class="profile-row"><span class="label">Type</span><span class="value">${esc(acc.account_type)}</span></div>
       <div class="profile-row"><span class="label">Tier</span><span class="value">${esc(acc.tier_id)}</span></div>
-      <div class="profile-row"><span class="label">สถานะ</span><span class="value">${esc(acc.status)}</span></div>
-      <div class="profile-row"><span class="label">ร้าน</span><span class="value">${esc(acc.store_id || '-')}</span></div>
-      <div class="profile-row"><span class="label">แผนก</span><span class="value">${esc(acc.dept_id || '-')}</span></div>
-      <div class="profile-row"><span class="label">จำนวน Users</span><span class="value">${acc.user_count}</span></div>
-      <div class="profile-row"><span class="label">เข้าใช้ล่าสุด</span><span class="value">${formatDate(acc.last_login)}</span></div>
-      <div class="profile-row"><span class="label">สร้างเมื่อ</span><span class="value">${formatDate(acc.created_at)}</span></div>
+      <div class="profile-row"><span class="label">Status</span><span class="value">${esc(acc.status)}</span></div>
+      <div class="profile-row"><span class="label">Store</span><span class="value">${esc(acc.store_id || '-')}</span></div>
+      <div class="profile-row"><span class="label">Department</span><span class="value">${esc(acc.dept_id || '-')}</span></div>
+      <div class="profile-row"><span class="label">Users</span><span class="value">${acc.user_count}</span></div>
+      <div class="profile-row"><span class="label">Last Login</span><span class="value">${formatDate(acc.last_login)}</span></div>
+      <div class="profile-row"><span class="label">Created</span><span class="value">${formatDate(acc.created_at)}</span></div>
     </div>
     <div style="padding:16px;display:flex;flex-direction:column;gap:8px">
-      ${acc.status === 'approved' ? `<button class="btn btn-danger btn-full" onclick="Screens.suspendAccount('${esc(acc.account_id)}')">ระงับบัญชี</button>` : ''}
-      ${acc.status === 'suspended' ? `<button class="btn btn-gold btn-full" onclick="Screens.reactivateAccount('${esc(acc.account_id)}')">เปิดใช้งานอีกครั้ง</button>` : ''}
+      <button class="btn btn-outline btn-full" onclick="Screens.showEditAccount('${esc(acc.account_id)}')">Edit Account</button>
+      ${acc.status === 'approved' ? `<button class="btn btn-danger btn-full" onclick="Screens.suspendAccount('${esc(acc.account_id)}')">Suspend Account</button>` : ''}
+      ${acc.status === 'suspended' ? `<button class="btn btn-gold btn-full" onclick="Screens.reactivateAccount('${esc(acc.account_id)}')">Reactivate Account</button>` : ''}
     </div>`;
   } catch (err) {
     content.innerHTML = `<div class="empty-state">${esc(err.message)}</div>`;
   }
 }
 
+function showEditAccount(accountId) {
+  const acc = _accountDetail;
+  if (!acc) return;
+
+  const html = `
+  <div class="modal-overlay" id="modal-edit-acc" onclick="if(event.target===this)this.remove()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-close" onclick="document.getElementById('modal-edit-acc').remove()">✕</div>
+      <div class="modal-title">Edit Account</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="input-group"><label>Display Label</label><input class="input-field" id="inp-ea-label" value="${esc(acc.display_label || '')}"></div>
+        <div class="input-group"><label>Tier</label>
+          <select class="input-field" id="inp-ea-tier">
+            ${['T1','T2','T3','T4','T5','T6','T7'].map(t => `<option value="${t}" ${acc.tier_id===t?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>
+        <div class="input-group"><label>Store</label><input class="input-field" id="inp-ea-store" value="${esc(acc.store_id || '')}" placeholder="e.g. MNG, BC"></div>
+        <div class="input-group"><label>Department</label><input class="input-field" id="inp-ea-dept" value="${esc(acc.dept_id || '')}" placeholder="e.g. dessert, bakery"></div>
+        <div class="input-group"><label>Status</label>
+          <select class="input-field" id="inp-ea-status">
+            ${['approved','suspended','pending'].map(s => `<option value="${s}" ${acc.status===s?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div class="input-group"><label>New Password (leave blank to keep)</label><input type="password" class="input-field" id="inp-ea-pass" placeholder="New password"></div>
+        <div class="error-msg" id="ea-error"></div>
+        <button class="btn btn-gold btn-full" onclick="Screens.doEditAccount('${esc(accountId)}')">Save Changes</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function doEditAccount(accountId) {
+  const updates = {
+    target_account_id: accountId,
+    display_label: $('inp-ea-label').value.trim(),
+    tier_id: $('inp-ea-tier').value,
+    store_id: $('inp-ea-store').value.trim(),
+    dept_id: $('inp-ea-dept').value.trim(),
+    status: $('inp-ea-status').value
+  };
+  const newPass = $('inp-ea-pass').value;
+  if (newPass) updates.password = newPass;
+
+  App.showLoader();
+  try {
+    await API.adminUpdateAccount(updates);
+    document.getElementById('modal-edit-acc')?.remove();
+    App.toast('Account updated', 'success');
+    loadAccountDetail(accountId);
+  } catch (err) {
+    showFieldError('ea-error', err.message);
+  } finally {
+    App.hideLoader();
+  }
+}
+
 async function suspendAccount(accountId) {
-  if (!confirm('ยืนยันระงับบัญชีนี้?')) return;
+  if (!confirm('Confirm suspend this account?')) return;
   App.showLoader();
   try {
     await API.adminUpdateAccount({ target_account_id: accountId, status: 'suspended' });
-    App.toast('ระงับบัญชีแล้ว', 'success');
+    App.toast('Account suspended', 'success');
     loadAccountDetail(accountId);
   } catch (err) { App.toast(err.message, 'error'); }
   finally { App.hideLoader(); }
@@ -451,7 +571,7 @@ async function reactivateAccount(accountId) {
   App.showLoader();
   try {
     await API.adminUpdateAccount({ target_account_id: accountId, status: 'approved' });
-    App.toast('เปิดใช้งานอีกครั้งแล้ว', 'success');
+    App.toast('Account reactivated', 'success');
     loadAccountDetail(accountId);
   } catch (err) { App.toast(err.message, 'error'); }
   finally { App.hideLoader(); }
@@ -467,7 +587,7 @@ function renderRegReview(params = {}) {
   <div class="screen screen-enter">
     <div class="header-bar">
       <button class="back-btn" onclick="App.go('admin')">←</button>
-      <div class="header-title">พิจารณาคำขอ</div>
+      <div class="header-title">Review Request</div>
     </div>
     <div class="screen-body" id="reg-review-content">
       <div style="text-align:center;padding:30px;color:var(--tm)">กำลังโหลด...</div>
@@ -561,7 +681,7 @@ function renderAudit() {
     <div class="header-bar">
       <button class="back-btn" onclick="App.go('admin')">←</button>
       <div class="header-title">Audit Log</div>
-      <button class="btn btn-ghost btn-sm" onclick="Screens.exportAudit()">📤 Export</button>
+      <button class="btn btn-ghost btn-sm" onclick="Screens.exportAudit()">Export</button>
     </div>
     <div class="filter-bar">
       <select class="input-field" id="audit-type" onchange="Screens.loadAuditLog()">
@@ -655,9 +775,12 @@ Object.assign(Screens, {
   renderPending,
   renderAdmin, adminTab, loadAdminContent,
   showCreateAccount, doCreateAccount,
-  cyclePerm,
+  setPerm,
   toggleBridge,
+  filterAccounts,
   renderAccountDetail, loadAccountDetail, suspendAccount, reactivateAccount,
+  showEditAccount, doEditAccount,
+  filterRegs,
   renderRegReview, loadRegReview, reviewReg,
   renderAudit, loadAuditLog, exportAudit
 });

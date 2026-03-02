@@ -7,7 +7,7 @@
 
 const API = (() => {
   // ⚠️ CHANGE THIS after deploying Apps Script as Web App
-let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbzdhg.supabase.co/functions/v1/api';
+let BASE_URL = localStorage.getItem('spg_api_url') || 'https://script.google.com/macros/s/AKfycbwMT-1g6fok_s7P454Lk-4zxTNeVD2zGZvFQyhua7kUFOuWAo0VsWcIXRxYH3GpQgSk/exec';
 
   // Session storage
   const SESSION_KEY = 'spg_session';
@@ -132,6 +132,7 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbz
     getProfile: () => post('get_profile', tokenBody()),
     updateProfile: (data) => post('update_profile', tokenBody(data)),
     changePin: (data) => post('change_pin', tokenBody(data)),
+    changePassword: (data) => post('change_password', tokenBody(data)),
 
 
     // EP-10: Admin Get Accounts

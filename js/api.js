@@ -14,7 +14,7 @@
 const API = (() => {
   // ⚠️ CHANGE THIS after deploying: supabase functions deploy home --no-verify-jwt
   // Format: https://<project-ref>.supabase.co/functions/v1/home
-let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbzdhg.supabase.co/functions/v1/home';
+let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbzdhg.supabase.co/functions/v1/api';
 
   // Session storage
   const SESSION_KEY = 'spg_session';

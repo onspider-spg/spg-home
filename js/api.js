@@ -2,12 +2,19 @@
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * api.js — API Client + Session Manager
+ * v2.0 — Supabase Edge Function
+ * ═══════════════════════════════════════════
+ * Changes from v1 (Apps Script):
+ *   1. BASE_URL → Supabase Edge Function URL
+ *   2. Content-Type → application/json (was text/plain for Apps Script CORS)
+ *   3. Removed redirect:'follow' (Apps Script 302 redirect not needed)
  * ═══════════════════════════════════════════
  */
 
 const API = (() => {
-  // ⚠️ CHANGE THIS after deploying Apps Script as Web App
-let BASE_URL = localStorage.getItem('spg_api_url') || 'https://script.google.com/macros/s/AKfycbwMT-1g6fok_s7P454Lk-4zxTNeVD2zGZvFQyhua7kUFOuWAo0VsWcIXRxYH3GpQgSk/exec';
+  // ⚠️ CHANGE THIS after deploying: supabase functions deploy home --no-verify-jwt
+  // Format: https://<project-ref>.supabase.co/functions/v1/home
+let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbzdhg.supabase.co/functions/v1/home';
 
   // Session storage
   const SESSION_KEY = 'spg_session';
@@ -23,18 +30,16 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://script.google.com
   // ─── HTTP ───
   async function post(action, data = {}) {
     if (!BASE_URL) throw new Error('API URL not configured');
-    
+
     const url = `${BASE_URL}?action=${action}`;
     const resp = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain' }, // Apps Script CORS
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-      redirect: 'follow'
     });
 
-    // Google Apps Script redirects — fetch follows automatically
     const json = await resp.json();
-    
+
     if (!json.success) {
       const err = new Error(json.error?.message || 'Unknown error');
       err.code = json.error?.code;
@@ -70,7 +75,6 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://script.google.com
       const raw = localStorage.getItem(SESSION_KEY);
       if (!raw) return null;
       const data = JSON.parse(raw);
-      // Check if expired
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
         clearSession();
         return null;
@@ -110,16 +114,16 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://script.google.com
     // EP-02: Register
     register: (data) => post('register', data),
 
-    // EP-03: Validate Session
+    // EP-03: Validate Session (for external modules)
     validateSession: (module_id) => post('validate_session', tokenBody({ module_id })),
 
-    // EP-04: Get Users (group)
+    // EP-04: Get Users (group account staff list)
     getUsers: (account_id) => post('get_users', { ...tokenBody(), account_id }),
 
-    // EP-05: Create User
+    // EP-05: Create User (add staff to group)
     createUser: (data) => post('create_user', { ...tokenBody(), ...data }),
 
-    // EP-06: Switch User
+    // EP-06: Switch User (group account)
     switchUser: (account_id, user_id, pin) => post('switch_user', { account_id, user_id, pin }),
 
     // EP-07: Logout
@@ -133,7 +137,6 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://script.google.com
     updateProfile: (data) => post('update_profile', tokenBody(data)),
     changePin: (data) => post('change_pin', tokenBody(data)),
     changePassword: (data) => post('change_password', tokenBody(data)),
-
 
     // EP-10: Admin Get Accounts
     adminGetAccounts: (filters = {}) => post('admin_get_accounts', tokenBody(filters)),
@@ -176,10 +179,10 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://script.google.com
     // EP-22: Set User Metadata
     setUserMetadata: (data) => post('set_user_metadata', tokenBody(data)),
 
-    // EP-23: Get Stores
+    // EP-23: Get Stores (public — no token)
     getStores: () => post('get_stores', {}),
 
-    // EP-24: Get Departments
+    // EP-24: Get Departments (public — no token)
     getDepartments: () => post('get_departments', {})
   };
 })();

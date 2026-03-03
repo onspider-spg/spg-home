@@ -248,7 +248,20 @@ function filterAccounts() {
 }
 
 // ─── Create Account Modal ───
-function showCreateAccount() {
+async function showCreateAccount() {
+  // Load stores + departments from API
+  let storeOptions = '<option value="">-- ไม่ระบุ --</option>';
+  let deptOptions = '<option value="">-- ไม่ระบุ --</option>';
+  try {
+    const [storesData, deptsData] = await Promise.all([API.getStores(), API.getDepartments()]);
+    if (storesData.stores) storesData.stores.forEach(s => {
+      storeOptions += `<option value="${esc(s.store_id)}">${esc(s.store_name)} (${esc(s.store_id)})</option>`;
+    });
+    if (deptsData.departments) deptsData.departments.forEach(d => {
+      deptOptions += `<option value="${esc(d.dept_id)}">${esc(d.dept_name)} (${esc(d.dept_id)})</option>`;
+    });
+  } catch (e) { console.warn('Failed to load stores/depts:', e); }
+
   const html = `
   <div class="modal-overlay" id="modal-create-acc" onclick="if(event.target===this)this.remove()">
     <div class="modal-sheet">
@@ -272,8 +285,8 @@ function showCreateAccount() {
             <option value="T7">T7 — Viewer</option>
           </select>
         </div>
-        <div class="input-group"><label>Store ID</label><input class="input-field" id="inp-ca-store" placeholder="เช่น MNG, BC"></div>
-        <div class="input-group"><label>Department</label><input class="input-field" id="inp-ca-dept" placeholder="เช่น dessert, bakery"></div>
+        <div class="input-group"><label>Store</label><select class="input-field" id="inp-ca-store">${storeOptions}</select></div>
+        <div class="input-group"><label>Department</label><select class="input-field" id="inp-ca-dept">${deptOptions}</select></div>
         <div class="error-msg" id="ca-error"></div>
         <button class="btn btn-gold btn-full" onclick="Screens.doCreateAccount()">สร้างบัญชี</button>
       </div>

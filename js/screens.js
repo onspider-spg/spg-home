@@ -698,12 +698,8 @@ function showChangePin() {
       <div class="modal-close" onclick="document.getElementById('pin-change-modal').remove()">✕</div>
       <div class="modal-title">Change PIN</div>
       <div class="input-group">
-        <label>Current PIN (if set)</label>
-        <input type="password" class="input-field" id="inp-old-pin" maxlength="6" inputmode="numeric" placeholder="Current 6-digit PIN">
-      </div>
-      <div class="input-group">
         <label>New PIN</label>
-        <input type="password" class="input-field" id="inp-new-pin" maxlength="6" inputmode="numeric" placeholder="New 6-digit PIN">
+        <input type="password" class="input-field" id="inp-new-pin" maxlength="6" inputmode="numeric" placeholder="New 6-digit PIN" autofocus>
       </div>
       <div class="input-group">
         <label>Confirm New PIN</label>
@@ -719,38 +715,21 @@ function showChangePin() {
 }
 
 async function doChangePin() {
-
-  const current_pin = document.getElementById('inp-old-pin').value.trim();
-
   const new_pin = document.getElementById('inp-new-pin').value.trim();
-
   const confirm_pin = document.getElementById('inp-confirm-pin').value.trim();
 
-  
-
   if (!new_pin || new_pin.length !== 6 || !/^\d{6}$/.test(new_pin)) {
-
     showFieldError('pin-change-error', 'New PIN must be 6 digits');
-
     return;
-
   }
-
   if (new_pin !== confirm_pin) {
-
     showFieldError('pin-change-error', 'PINs do not match');
-
     return;
-
   }
-
-  
 
   App.showLoader();
-
   try {
-
-    await API.changePin({ current_pin, new_pin });
+    await API.changePin({ new_pin });
 
     document.getElementById('pin-change-modal')?.remove();
 

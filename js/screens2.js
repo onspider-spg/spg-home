@@ -538,7 +538,7 @@ async function loadAccountDetail(accountId) {
                 <div class="item-name">${esc(u.display_name)}</div>
                 <div class="item-meta">${esc(u.user_id)} \u00B7 ${esc(u.full_name || '')} \u00B7 ${esc(u.phone || '-')}</div>
               </div>
-              <button class="btn btn-ghost btn-sm" onclick="Screens.showEditUser(${JSON.stringify(u).replace(/'/g,'\\u0027')})">Edit</button>
+              <button class="btn btn-ghost btn-sm" onclick='Screens.showEditUser(${JSON.stringify({user_id:u.user_id,display_name:u.display_name||"",full_name:u.full_name||"",phone:u.phone||"",is_active:u.is_active}).replace(/\x27/g,"&#39;")})'>Edit</button>
             </div>`).join('');
         }
       }

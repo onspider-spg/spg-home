@@ -151,6 +151,7 @@ function renderAdmin(p) {
       <div class="admin-tab ${adminActiveTab==='permissions'?'active':''}" onclick="Screens.adminTab('permissions')">Permissions</div>
       <div class="admin-tab ${adminActiveTab==='registrations'?'active':''}" onclick="Screens.adminTab('registrations')">Requests</div>
       <div class="admin-tab ${adminActiveTab==='bridge'?'active':''}" onclick="Screens.adminTab('bridge')">Bridge</div>
+      <div class="admin-tab ${adminActiveTab==='modules'?'active':'' }" onclick="Screens.adminTab('modules')">Modules</div>
       <div class="admin-tab" onclick="App.go('audit')">Audit</div>
     </div>
     <div class="screen-body" id="admin-content">
@@ -165,7 +166,7 @@ function adminTab(tab) {
   // Update tab buttons
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   const tabs = document.querySelectorAll('.admin-tab');
-  const idx = ['accounts','permissions','registrations','bridge'].indexOf(tab);
+  const idx = ['accounts','permissions','registrations','bridge','modules'].indexOf(tab);
   if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
   loadAdminContent();
 }
@@ -180,6 +181,7 @@ async function loadAdminContent(p) {
     else if (adminActiveTab === 'permissions') await loadPermissions(content);
     else if (adminActiveTab === 'registrations') await loadRegistrations(content);
     else if (adminActiveTab === 'bridge') await loadBridge(content);
+    else if (adminActiveTab === 'modules') await loadModulesAdmin(content);
   } catch (err) {
     content.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">${esc(err.message)}</div></div>`;
   }
@@ -506,7 +508,7 @@ async function loadAccountDetail(accountId) {
     <div class="profile-section" style="margin-top:8px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-weight:600;font-size:14px">Users</div>
-        ${acc.account_type === 'group' ? \`<button class="btn btn-gold btn-sm" onclick="Screens.showAddUser('\${esc(acc.account_id)}')">+ Add</button>\` : ''}
+        ${acc.account_type === 'group' ? `<button class="btn btn-gold btn-sm" onclick="Screens.showAddUser('${esc(acc.account_id)}')">+ Add</button>` : ''}
       </div>
       <div id="acc-users-list"><div style="text-align:center;padding:10px;color:var(--tm);font-size:12px">Loading users...</div></div>
     </div>
@@ -541,15 +543,28 @@ async function loadAccountDetail(accountId) {
   }
 }
 
-function showEditAccount(accountId) {
+async function showEditAccount(accountId) {
   const acc = _accountDetail;
   if (!acc) return;
+
+  // Load stores & departments from DB
+  let storeOpts = '<option value="">-- \u0e44\u0e21\u0e48\u0e23\u0e30\u0e1a\u0e38 --</option>';
+  let deptOpts = '<option value="">-- \u0e44\u0e21\u0e48\u0e23\u0e30\u0e1a\u0e38 --</option>';
+  try {
+    const [sd, dd] = await Promise.all([API.getStores(), API.getDepartments()]);
+    if (sd.stores) sd.stores.forEach(s => {
+      storeOpts += `<option value="${esc(s.store_id)}" ${acc.store_id===s.store_id?'selected':''}>${esc(s.store_name)} (${esc(s.store_id)})</option>`;
+    });
+    if (dd.departments) dd.departments.forEach(d => {
+      deptOpts += `<option value="${esc(d.dept_id)}" ${acc.dept_id===d.dept_id?'selected':''}>${esc(d.dept_name)} (${esc(d.dept_id)})</option>`;
+    });
+  } catch(e) { console.warn('Failed to load stores/depts', e); }
 
   const html = `
   <div class="modal-overlay" id="modal-edit-acc" onclick="if(event.target===this)this.remove()">
     <div class="modal-sheet">
       <div class="modal-handle"></div>
-      <div class="modal-close" onclick="document.getElementById('modal-edit-acc').remove()">✕</div>
+      <div class="modal-close" onclick="document.getElementById('modal-edit-acc').remove()">\u2715</div>
       <div class="modal-title">Edit Account</div>
       <div style="display:flex;flex-direction:column;gap:10px">
         <div class="input-group"><label>Display Label</label><input class="input-field" id="inp-ea-label" value="${esc(acc.display_label || '')}"></div>
@@ -558,8 +573,8 @@ function showEditAccount(accountId) {
             ${['T1','T2','T3','T4','T5','T6','T7'].map(t => `<option value="${t}" ${acc.tier_id===t?'selected':''}>${t}</option>`).join('')}
           </select>
         </div>
-        <div class="input-group"><label>Store</label><input class="input-field" id="inp-ea-store" value="${esc(acc.store_id || '')}" placeholder="e.g. MNG, BC"></div>
-        <div class="input-group"><label>Department</label><input class="input-field" id="inp-ea-dept" value="${esc(acc.dept_id || '')}" placeholder="e.g. dessert, bakery"></div>
+        <div class="input-group"><label>Store</label><select class="input-field" id="inp-ea-store">${storeOpts}</select></div>
+        <div class="input-group"><label>Department</label><select class="input-field" id="inp-ea-dept">${deptOpts}</select></div>
         <div class="input-group"><label>Status</label>
           <select class="input-field" id="inp-ea-status">
             ${['approved','suspended','pending'].map(s => `<option value="${s}" ${acc.status===s?'selected':''}>${s}</option>`).join('')}
@@ -573,7 +588,6 @@ function showEditAccount(accountId) {
   </div>`;
   document.body.insertAdjacentHTML('beforeend', html);
 }
-
 async function doEditAccount(accountId) {
   const updates = {
     target_account_id: accountId,
@@ -896,6 +910,92 @@ async function doEditUser(userId) {
   } finally { App.hideLoader(); }
 }
 
+
+// ─── Modules Admin Tab ───
+async function loadModulesAdmin(container) {
+  try {
+    const data = await API.adminGetAllModules();
+    if (!data.modules || data.modules.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-text">No modules</div></div>';
+      return;
+    }
+    let html = '';
+    data.modules.forEach(m => {
+      const statusBadge = m.status === 'active' ? 'badge-approved' : m.status === 'coming_soon' ? 'badge-pending' : 'badge-suspended';
+      const urlShort = (m.app_url || 'No URL').length > 40 ? (m.app_url || '').substring(0, 40) + '...' : (m.app_url || 'No URL');
+      html += `
+      <div class="list-item" style="cursor:default">
+        <div class="item-avatar" style="font-size:20px">${esc(m.icon || '\u{1F4E6}')}</div>
+        <div class="item-info" style="flex:1">
+          <div class="item-name">${esc(m.module_name)} <span style="font-size:11px;color:var(--tm)">(${esc(m.module_id)})</span></div>
+          <div class="item-meta" style="word-break:break-all">${esc(urlShort)}</div>
+        </div>
+        <span class="item-badge ${statusBadge}" style="margin-right:8px">${esc(m.status)}</span>
+        <button class="btn btn-ghost btn-sm" onclick='Screens.showEditModule(${JSON.stringify({
+          module_id: m.module_id, module_name: m.module_name || "",
+          module_name_en: m.module_name_en || "", icon: m.icon || "",
+          app_url: m.app_url || "", status: m.status || "inactive",
+          sort_order: m.sort_order || 0
+        }).replace(/\x27/g, "&#39;")})'>Edit</button>
+      </div>`;
+    });
+    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${data.modules.length} modules</div>`;
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>';
+  }
+}
+
+function showEditModule(mod) {
+  const html = `
+  <div class="modal-overlay" id="modal-edit-mod" onclick="if(event.target===this)this.remove()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-close" onclick="document.getElementById('modal-edit-mod').remove()">\u2715</div>
+      <div class="modal-title">Edit Module</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="input-group"><label>Module ID</label><div class="input-field" style="background:var(--bg2);cursor:default">${esc(mod.module_id)}</div></div>
+        <div class="input-group"><label>\u0e0a\u0e37\u0e48\u0e2d (TH)</label><input class="input-field" id="inp-em-name" value="${esc(mod.module_name)}"></div>
+        <div class="input-group"><label>Name (EN)</label><input class="input-field" id="inp-em-name-en" value="${esc(mod.module_name_en)}"></div>
+        <div class="input-group"><label>Icon (emoji)</label><input class="input-field" id="inp-em-icon" value="${esc(mod.icon)}"></div>
+        <div class="input-group"><label>App URL</label><input class="input-field" id="inp-em-url" value="${esc(mod.app_url)}" placeholder="https://..."></div>
+        <div class="input-group"><label>Status</label>
+          <select class="input-field" id="inp-em-status">
+            <option value="active" ${mod.status==='active'?'selected':''}>Active</option>
+            <option value="inactive" ${mod.status==='inactive'?'selected':''}>Inactive</option>
+            <option value="coming_soon" ${mod.status==='coming_soon'?'selected':''}>Coming Soon</option>
+          </select>
+        </div>
+        <div class="input-group"><label>Sort Order</label><input class="input-field" type="number" id="inp-em-sort" value="${mod.sort_order}"></div>
+        <div class="error-msg" id="em-error"></div>
+        <button class="btn btn-gold btn-full" onclick="Screens.doEditModule('${esc(mod.module_id)}')">Save</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function doEditModule(moduleId) {
+  const data = {
+    module_id: moduleId,
+    module_name: $('inp-em-name')?.value?.trim(),
+    module_name_en: $('inp-em-name-en')?.value?.trim(),
+    icon: $('inp-em-icon')?.value?.trim(),
+    app_url: $('inp-em-url')?.value?.trim(),
+    status: $('inp-em-status')?.value,
+    sort_order: parseInt($('inp-em-sort')?.value) || 0
+  };
+  App.showLoader();
+  try {
+    await API.adminUpdateModule(data);
+    document.getElementById('modal-edit-mod')?.remove();
+    App.toast('Module updated', 'success');
+    loadAdminContent();
+  } catch(e) {
+    showFieldError('em-error', e.message);
+  } finally { App.hideLoader(); }
+}
+
 // EXTEND Screens OBJECT (Part 2)
 // ════════════════════════════════
 Object.assign(Screens, {
@@ -909,6 +1009,7 @@ Object.assign(Screens, {
   renderAccountDetail, loadAccountDetail, suspendAccount, reactivateAccount,
   showEditAccount, doEditAccount,
   showAddUser, doAddUser, showEditUser, doEditUser,
+  loadModulesAdmin, showEditModule, doEditModule,
   filterRegs,
   renderRegReview, loadRegReview, reviewReg,
   renderAudit, loadAuditLog, exportAudit

@@ -2,20 +2,24 @@
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * app.js — Router + Screen Manager + Utilities
+ * v3.2 — Hash Routing with Sub-routes
  * ═══════════════════════════════════════════
  * 
  * Route Map:
- *   login          → S1 Login
- *   staff-select   → S3 Staff Selection
- *   new-staff      → S4 New Staff Registration
- *   dashboard      → S5 Home Dashboard
- *   profile        → S6 User Profile
- *   register       → S7 Public Registration
- *   pending        → S8 Pending Approval
- *   admin          → S9 Admin Panel
- *   account-detail → S10 Account Detail
- *   reg-review     → S11 Registration Review
- *   audit          → S12 Audit Log
+ *   #login              → S1 Login
+ *   #staff-select       → S3 Staff Selection
+ *   #new-staff          → S4 New Staff Registration
+ *   #dashboard          → S5 Home Dashboard
+ *   #profile            → S6 User Profile
+ *   #register           → S7 Public Registration
+ *   #pending            → S8 Pending Approval
+ *   #admin/accounts     → S9 Admin Panel (Accounts tab)
+ *   #admin/permissions  → S9 Admin Panel (Permissions tab)
+ *   #admin/registrations→ S9 Admin Panel (Requests tab)
+ *   #admin/bridge       → S9 Admin Panel (Bridge tab)
+ *   #account-detail/ID  → S10 Account Detail
+ *   #reg-review/ID      → S11 Registration Review
+ *   #audit              → S12 Audit Log
  */
 
 const App = (() => {
@@ -32,13 +36,42 @@ const App = (() => {
     'profile':         { render: () => Screens.renderProfile(),                   onLoad: () => Screens.loadProfile() },
     'register':        { render: () => Screens.renderRegister(),                  onLoad: () => Screens.loadRegisterDropdowns() },
     'pending':         { render: (p) => Screens.renderPending(p),                 onLoad: null },
-    'admin':           { render: () => Screens.renderAdmin(),                     onLoad: () => Screens.loadAdminContent() },
+    'admin':           { render: (p) => Screens.renderAdmin(p),                   onLoad: (p) => Screens.loadAdminContent(p) },
     'account-detail':  { render: (p) => Screens.renderAccountDetail(p),           onLoad: (p) => Screens.loadAccountDetail(p.account_id) },
     'reg-review':      { render: (p) => Screens.renderRegReview(p),               onLoad: (p) => Screens.loadRegReview(p.request_id) },
     'audit':           { render: () => Screens.renderAudit(),                     onLoad: () => Screens.loadAuditLog() }
   };
 
-  // ─── NAVIGATE ───
+  // ─── PARSE HASH → { route, params } ───
+  function parseHash(hash) {
+    const clean = (hash || '').replace(/^#/, '');
+    if (!clean) return { route: '', params: {} };
+
+    const parts = clean.split('/');
+    const route = parts[0];
+    const sub = parts.slice(1).join('/');
+    const params = {};
+
+    if (route === 'admin' && sub) {
+      params.tab = sub;
+    } else if (route === 'account-detail' && sub) {
+      params.account_id = sub;
+    } else if (route === 'reg-review' && sub) {
+      params.request_id = sub;
+    }
+
+    return { route, params };
+  }
+
+  // ─── BUILD HASH from route + params ───
+  function buildHash(route, params = {}) {
+    if (route === 'admin') return `#admin/${params.tab || 'accounts'}`;
+    if (route === 'account-detail' && params.account_id) return `#account-detail/${params.account_id}`;
+    if (route === 'reg-review' && params.request_id) return `#reg-review/${params.request_id}`;
+    return `#${route}`;
+  }
+
+  // ─── NAVIGATE (full screen change) ───
   function go(route, params = {}) {
     const def = ROUTES[route];
     if (!def) {
@@ -50,7 +83,6 @@ const App = (() => {
     const publicRoutes = ['login', 'register', 'pending'];
     if (!publicRoutes.includes(route)) {
       const session = API.getSession();
-      // staff-select and new-staff need account temp only
       if (route === 'staff-select' || route === 'new-staff') {
         if (!API.getAccountTemp()) return go('login');
       } else if (!session) {
@@ -73,8 +105,16 @@ const App = (() => {
     // Scroll to top
     window.scrollTo(0, 0);
 
-    // Update hash for back button
-    history.replaceState({ route, params }, '', `#${route}`);
+    // Update URL hash
+    const hash = buildHash(route, params);
+    history.replaceState({ route, params }, '', hash);
+  }
+
+  // ─── UPDATE HASH ONLY (no re-render, for tab switches) ───
+  function updateHash(route, params = {}) {
+    currentParams = { ...currentParams, ...params };
+    const hash = buildHash(route || currentRoute, currentParams);
+    history.replaceState({ route: route || currentRoute, params: currentParams }, '', hash);
   }
 
   // ─── TOAST ───
@@ -108,19 +148,29 @@ const App = (() => {
 
   // ─── INIT ───
   function init() {
-    // Check for existing session
     const session = API.getSession();
-    
-    if (session) {
-      go('dashboard');
+
+    // Try to restore route from current hash
+    const { route, params } = parseHash(location.hash);
+
+    if (route && ROUTES[route]) {
+      const publicRoutes = ['login', 'register', 'pending'];
+      if (publicRoutes.includes(route) || session) {
+        go(route, params);
+      } else {
+        go('login');
+      }
     } else {
-      go('login');
+      go(session ? 'dashboard' : 'login');
     }
 
-    // Handle browser back button
+    // Handle browser back/forward
     window.addEventListener('popstate', (e) => {
       if (e.state?.route) {
         go(e.state.route, e.state.params || {});
+      } else {
+        const { route: r, params: p } = parseHash(location.hash);
+        if (r && ROUTES[r]) go(r, p);
       }
     });
   }
@@ -132,5 +182,5 @@ const App = (() => {
     init();
   }
 
-  return { go, toast, showLoader, hideLoader };
+  return { go, updateHash, toast, showLoader, hideLoader };
 })();

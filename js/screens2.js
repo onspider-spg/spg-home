@@ -135,7 +135,8 @@ function renderPending(params = {}) {
 // ════════════════════════════════
 let adminActiveTab = 'accounts';
 
-function renderAdmin() {
+function renderAdmin(p) {
+  if (p && p.tab) adminActiveTab = p.tab;
   const s = API.getSession();
   if (!s) return Screens.renderLogin();
 
@@ -160,6 +161,7 @@ function renderAdmin() {
 
 function adminTab(tab) {
   adminActiveTab = tab;
+  App.updateHash('admin', { tab });
   // Update tab buttons
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   const tabs = document.querySelectorAll('.admin-tab');
@@ -168,7 +170,7 @@ function adminTab(tab) {
   loadAdminContent();
 }
 
-async function loadAdminContent() {
+async function loadAdminContent(p) {
   const content = $('admin-content');
   if (!content) return;
   content.innerHTML = '<div style="text-align:center;padding:30px;color:var(--tm)">กำลังโหลด...</div>';

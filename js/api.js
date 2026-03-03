@@ -34,7 +34,7 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbz
     const url = `${BASE_URL}?action=${action}`;
     const resp = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFodnpibHJmemh0cmpodmJ6ZGhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNTk1MzIsImV4cCI6MjA4NzkzNTUzMn0._UqfHVaVXC-OHNzeBQVwxA8gCKKbOzMrGVZ7AEq7tI0' },
       body: JSON.stringify(data),
     });
 

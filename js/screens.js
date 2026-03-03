@@ -183,7 +183,9 @@ async function selectStaff(userId) {
 
   } catch (err) {
     App.hideLoader();
-    if (err.message && (err.message.includes('PIN') || err.message.includes('pin'))) {
+    if (err.key === 'SET_PIN_REQUIRED') {
+      showSetPinPopup(userId);
+    } else if (err.message && (err.message.includes('PIN') || err.message.includes('pin'))) {
       showPinPopup(userId);
     } else {
       App.toast(err.message, 'error');
@@ -235,6 +237,64 @@ async function submitPin(userId) {
     App.hideLoader();
     showFieldError('pin-error', err.message || 'Incorrect PIN');
 
+  }
+}
+
+function showSetPinPopup(userId) {
+  const html = `
+  <div class="modal-overlay" id="setpin-modal" onclick="if(event.target===this)this.remove()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">ตั้ง PIN ใหม่</div>
+      <div style="font-size:13px;color:var(--tm);margin-bottom:12px">คุณยังไม่มี PIN กรุณาตั้ง PIN ก่อนเข้าใช้งาน</div>
+      <div class="input-group">
+        <label>PIN (6 หลัก)</label>
+        <input type="password" class="input-field" id="inp-set-pin"
+               maxlength="6" inputmode="numeric" pattern="[0-9]{6}"
+               placeholder="••••••" autofocus>
+      </div>
+      <div class="input-group">
+        <label>ยืนยัน PIN</label>
+        <input type="password" class="input-field" id="inp-set-pin2"
+               maxlength="6" inputmode="numeric" pattern="[0-9]{6}"
+               placeholder="••••••">
+      </div>
+      <div class="error-msg" id="setpin-error"></div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-gold btn-full" onclick="Screens.submitSetPin('${userId}')">ตั้ง PIN</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  setTimeout(() => document.getElementById('inp-set-pin')?.focus(), 100);
+}
+
+async function submitSetPin(userId) {
+  const pin1 = ($('inp-set-pin')?.value || '').trim();
+  const pin2 = ($('inp-set-pin2')?.value || '').trim();
+  if (!pin1 || pin1.length !== 6 || !/^\d{6}$/.test(pin1)) {
+    showFieldError('setpin-error', 'PIN ต้องเป็นตัวเลข 6 หลัก');
+    return;
+  }
+  if (pin1 !== pin2) {
+    showFieldError('setpin-error', 'PIN ไม่ตรงกัน');
+    return;
+  }
+  const acc = API.getAccountTemp();
+  if (!acc) return;
+  App.showLoader();
+  try {
+    await API.setUserPin(acc.account_id, userId, pin1);
+    document.getElementById('setpin-modal')?.remove();
+    App.toast('ตั้ง PIN สำเร็จ', 'success');
+    // Now login with the new PIN
+    const data = await API.switchUser(acc.account_id, userId, pin1);
+    API.saveSession(data);
+    App.hideLoader();
+    App.go('dashboard');
+  } catch (err) {
+    App.hideLoader();
+    showFieldError('setpin-error', err.message || 'ตั้ง PIN ไม่สำเร็จ');
   }
 }
 
@@ -394,7 +454,7 @@ function launchModule(url) {
   const s = API.getSession();
   if (!s) return;
   const sep = url.includes('?') ? '&' : '?';
-  window.open(`${url}${sep}token=${s.token}`, '_self');
+  window.open(`${url}${sep}token=${s.token}`, '_blank');
 }
 
 // ════════════════════════════════
@@ -755,7 +815,7 @@ function formatShortDate(iso) {
 return {
   $, esc, showFieldError, hideError, formatDate, formatShortDate,
   renderLogin, doLogin, saveApiUrl, showApiConfig,
-  renderStaffSelect, loadStaffList, selectStaff, showPinPopup, submitPin,
+  renderStaffSelect, loadStaffList, selectStaff, showPinPopup, submitPin, showSetPinPopup, submitSetPin,
   renderNewStaff, doCreateStaff,
   renderDashboard, loadModules, launchModule,
   renderProfile, loadProfile, doLogout, switchUserFlow,

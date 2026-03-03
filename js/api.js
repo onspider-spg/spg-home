@@ -126,6 +126,9 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbz
     // EP-06: Switch User (group account)
     switchUser: (account_id, user_id, pin) => post('switch_user', { account_id, user_id, pin }),
 
+    // Set PIN first time (no session)
+    setUserPin: (account_id, user_id, new_pin) => post('set_user_pin', { account_id, user_id, new_pin }),
+
     // EP-07: Logout
     logout: () => post('logout', tokenBody()),
 

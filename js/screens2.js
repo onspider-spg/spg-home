@@ -67,7 +67,7 @@ async function loadRegisterDropdowns() {
     
     if (storeEl) {
       storeEl.innerHTML = '<option value="">-- Select Store --</option>' +
-        stores.stores.map(s => `<option value="${esc(s.store_id)}">${esc(s.store_name_th || s.store_name)}</option>`).join('');
+        stores.stores.filter(s => s.store_id !== 'ALL').map(s => `<option value="${esc(s.store_id)}">${esc(s.store_name_th || s.store_name)}</option>`).join('');
     }
     if (deptEl) {
       deptEl.innerHTML = '<option value="">-- Select Department --</option>' +

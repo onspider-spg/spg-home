@@ -179,6 +179,18 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbz
     // EP-22: Set User Metadata
     setUserMetadata: (data) => post('set_user_metadata', tokenBody(data)),
 
+    // Admin Get Users (all users for an account)
+    adminGetUsers: (account_id) => post('admin_get_users', { ...tokenBody(), account_id }),
+
+    // Admin Update User
+    adminUpdateUser: (data) => post('admin_update_user', { ...tokenBody(), ...data }),
+
+    // Admin Get All Modules
+    adminGetAllModules: () => post('admin_get_all_modules', tokenBody()),
+
+    // Admin Update Module
+    adminUpdateModule: (data) => post('admin_update_module', { ...tokenBody(), ...data }),
+
     // EP-23: Get Stores (public — no token)
     getStores: () => post('get_stores', {}),
 

@@ -883,6 +883,7 @@ function showEditUser(u) {
         <div class="input-group"><label>Display Name</label><input class="input-field" id="inp-eu-name" value="${esc(u.display_name || '')}"></div>
         <div class="input-group"><label>Full Name</label><input class="input-field" id="inp-eu-full" value="${esc(u.full_name || '')}"></div>
         <div class="input-group"><label>Phone</label><input class="input-field" id="inp-eu-phone" value="${esc(u.phone || '')}"></div>
+        <div class="input-group"><label>New PIN (leave blank to keep)</label><input class="input-field" id="inp-eu-pin" type="password" placeholder="New PIN (min 4 digits)" inputmode="numeric" maxlength="6"></div>
         <div class="input-group"><label>Status</label>
           <select class="input-field" id="inp-eu-active">
             <option value="true" ${u.is_active?'selected':''}>Active</option>
@@ -898,6 +899,7 @@ function showEditUser(u) {
 }
 
 async function doEditUser(userId) {
+  const pinVal = ($('inp-eu-pin')?.value || '').trim();
   const data = {
     user_id: userId,
     display_name: $('inp-eu-name')?.value?.trim(),
@@ -905,6 +907,7 @@ async function doEditUser(userId) {
     phone: $('inp-eu-phone')?.value?.trim(),
     is_active: $('inp-eu-active')?.value === 'true',
   };
+  if (pinVal) data.new_pin = pinVal;
   App.showLoader();
   try {
     await API.adminUpdateUser(data);

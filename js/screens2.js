@@ -508,7 +508,7 @@ async function loadAccountDetail(accountId) {
     <div class="profile-section" style="margin-top:8px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <div style="font-weight:600;font-size:14px">Users</div>
-        ${acc.account_type === 'group' ? \`<button class="btn btn-gold btn-sm" onclick="Screens.showAddUser('\${esc(acc.account_id)}')">+ Add</button>\` : ''}
+        ${acc.account_type === 'group' ? `<button class="btn btn-gold btn-sm" onclick="Screens.showAddUser('${esc(acc.account_id)}')">+ Add</button>` : ''}
       </div>
       <div id="acc-users-list"><div style="text-align:center;padding:10px;color:var(--tm);font-size:12px">Loading users...</div></div>
     </div>

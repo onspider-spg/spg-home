@@ -152,6 +152,9 @@ function renderAdmin(p) {
       <div class="admin-tab ${adminActiveTab==='registrations'?'active':''}" onclick="Screens.adminTab('registrations')">Requests</div>
       <div class="admin-tab ${adminActiveTab==='bridge'?'active':''}" onclick="Screens.adminTab('bridge')">Bridge</div>
       <div class="admin-tab ${adminActiveTab==='modules'?'active':'' }" onclick="Screens.adminTab('modules')">Modules</div>
+      <div class="admin-tab ${adminActiveTab==='user'?'active':''}" onclick="Screens.adminTab('user')">Users</div>
+      <div class="admin-tab ${adminActiveTab==='store'?'active':''}" onclick="Screens.adminTab('store')">Stores</div>
+      <div class="admin-tab ${adminActiveTab==='dept'?'active':''}" onclick="Screens.adminTab('dept')">Depts</div>
       <div class="admin-tab" onclick="App.go('audit')">Audit</div>
     </div>
     <div class="screen-body" id="admin-content">
@@ -166,7 +169,7 @@ function adminTab(tab) {
   // Update tab buttons
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   const tabs = document.querySelectorAll('.admin-tab');
-  const idx = ['accounts','permissions','registrations','bridge','modules'].indexOf(tab);
+  const idx = ['accounts','permissions','registrations','bridge','modules','user','store','dept'].indexOf(tab);
   if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
   loadAdminContent();
 }
@@ -182,6 +185,9 @@ async function loadAdminContent(p) {
     else if (adminActiveTab === 'registrations') await loadRegistrations(content);
     else if (adminActiveTab === 'bridge') await loadBridge(content);
     else if (adminActiveTab === 'modules') await loadModulesAdmin(content);
+    else if (adminActiveTab === 'user') await loadUsersAdmin(content);
+    else if (adminActiveTab === 'store') await loadStoresAdmin(content);
+    else if (adminActiveTab === 'dept') await loadDeptsAdmin(content);
   } catch (err) {
     content.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">${esc(err.message)}</div></div>`;
   }
@@ -996,6 +1002,226 @@ async function doEditModule(moduleId) {
   } finally { App.hideLoader(); }
 }
 
+
+// ─── Users Admin Tab ───
+async function loadUsersAdmin(container) {
+  try {
+    const q = $('user-admin-search')?.value || '';
+    const data = await API.adminListAllUsers(q);
+    if (!data.users || data.users.length === 0) {
+      container.innerHTML = `<div class="admin-toolbar"><input type="text" class="input-field input-sm" id="user-admin-search" placeholder="Search users..." value="${esc(q)}" onkeyup="if(event.key==='Enter')Screens.loadUsersAdmin($('admin-content'))"></div><div class="empty-state"><div class="empty-text">No users found</div></div>`;
+      return;
+    }
+    let html = `<div class="admin-toolbar"><input type="text" class="input-field input-sm" id="user-admin-search" placeholder="Search users..." value="${esc(q)}" onkeyup="if(event.key==='Enter')Screens.loadUsersAdmin($('admin-content'))"></div>`;
+    data.users.forEach(u => {
+      html += `
+      <div class="list-item" onclick="App.go('account-detail',{account_id:'${esc(u.account_id)}'})">
+        <div class="item-avatar">${u.is_active ? '\u{1F7E2}' : '\u{1F534}'}</div>
+        <div class="item-info" style="flex:1">
+          <div class="item-name">${esc(u.display_name)} <span style="font-size:11px;color:var(--tm)">(${esc(u.user_id)})</span></div>
+          <div class="item-meta">${esc(u.account_label)} \u00B7 ${esc(u.store_id || '-')} \u00B7 ${esc(u.dept_id || '-')} \u00B7 ${esc(u.account_type)}</div>
+        </div>
+      </div>`;
+    });
+    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${data.total} users</div>`;
+    container.innerHTML = html;
+  } catch(e) { container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>'; }
+}
+
+// ─── Stores Admin Tab ───
+async function loadStoresAdmin(container) {
+  try {
+    const data = await API.adminGetAllStores();
+    let html = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateStore()">+ Add Store</button></div>`;
+    if (!data.stores || data.stores.length === 0) {
+      html += '<div class="empty-state"><div class="empty-text">No stores</div></div>';
+      container.innerHTML = html;
+      return;
+    }
+    data.stores.forEach(s => {
+      const badge = s.is_active ? 'badge-approved' : 'badge-suspended';
+      html += `
+      <div class="list-item" style="cursor:default">
+        <div class="item-avatar" style="font-size:16px">\u{1F3EA}</div>
+        <div class="item-info" style="flex:1">
+          <div class="item-name">${esc(s.store_name)} <span style="font-size:11px;color:var(--tm)">(${esc(s.store_id)})</span></div>
+          <div class="item-meta">${esc(s.store_name_th || '-')} \u00B7 ${esc(s.brand || '-')} \u00B7 ${esc(s.location || '-')}</div>
+        </div>
+        <span class="item-badge ${badge}" style="margin-right:8px">${s.is_active ? 'Active' : 'Inactive'}</span>
+        <button class="btn btn-ghost btn-sm" onclick='Screens.showEditStore(${JSON.stringify({store_id:s.store_id,store_name:s.store_name||"",store_name_th:s.store_name_th||"",brand:s.brand||"",location:s.location||"",is_active:s.is_active}).replace(/\x27/g,"&#39;")})'>Edit</button>
+      </div>`;
+    });
+    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${data.stores.length} stores</div>`;
+    container.innerHTML = html;
+  } catch(e) { container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>'; }
+}
+
+function showCreateStore() {
+  const html = `
+  <div class="modal-overlay" id="modal-create-store" onclick="if(event.target===this)this.remove()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Create Store</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="input-group"><label>Store ID (e.g. MNG)</label><input class="input-field" id="inp-cs-id" placeholder="ABC" style="text-transform:uppercase"></div>
+        <div class="input-group"><label>Store Name (EN)</label><input class="input-field" id="inp-cs-name" placeholder="Store Name"></div>
+        <div class="input-group"><label>Store Name (TH)</label><input class="input-field" id="inp-cs-name-th" placeholder="\u0e0a\u0e37\u0e48\u0e2d\u0e20\u0e32\u0e29\u0e32\u0e44\u0e17\u0e22"></div>
+        <div class="input-group"><label>Brand</label><input class="input-field" id="inp-cs-brand" placeholder="Brand name"></div>
+        <div class="input-group"><label>Location</label><input class="input-field" id="inp-cs-location" placeholder="Location"></div>
+        <div class="error-msg" id="cs-error"></div>
+        <button class="btn btn-gold btn-full" onclick="Screens.doCreateStore()">\u0e2a\u0e23\u0e49\u0e32\u0e07 Store</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function doCreateStore() {
+  const data = { store_id: ($('inp-cs-id')?.value||'').trim().toUpperCase(), store_name: ($('inp-cs-name')?.value||'').trim(), store_name_th: ($('inp-cs-name-th')?.value||'').trim(), brand: ($('inp-cs-brand')?.value||'').trim(), location: ($('inp-cs-location')?.value||'').trim() };
+  if (!data.store_id || !data.store_name) return showFieldError('cs-error', 'Store ID and Name required');
+  App.showLoader();
+  try {
+    await API.adminCreateStore(data);
+    document.getElementById('modal-create-store')?.remove();
+    App.toast('Store created', 'success');
+    loadAdminContent();
+  } catch(e) { showFieldError('cs-error', e.message); }
+  finally { App.hideLoader(); }
+}
+
+function showEditStore(s) {
+  const html = `
+  <div class="modal-overlay" id="modal-edit-store" onclick="if(event.target===this)this.remove()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Edit Store</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="input-group"><label>Store ID</label><div class="input-field" style="background:var(--bg2);cursor:default">${esc(s.store_id)}</div></div>
+        <div class="input-group"><label>Store Name (EN)</label><input class="input-field" id="inp-es-name" value="${esc(s.store_name)}"></div>
+        <div class="input-group"><label>Store Name (TH)</label><input class="input-field" id="inp-es-name-th" value="${esc(s.store_name_th)}"></div>
+        <div class="input-group"><label>Brand</label><input class="input-field" id="inp-es-brand" value="${esc(s.brand)}"></div>
+        <div class="input-group"><label>Location</label><input class="input-field" id="inp-es-location" value="${esc(s.location)}"></div>
+        <div class="input-group"><label>Status</label>
+          <select class="input-field" id="inp-es-active">
+            <option value="true" ${s.is_active?'selected':''}>Active</option>
+            <option value="false" ${!s.is_active?'selected':''}>Inactive</option>
+          </select>
+        </div>
+        <div class="error-msg" id="es-error"></div>
+        <button class="btn btn-gold btn-full" onclick="Screens.doEditStore('${esc(s.store_id)}')">Save</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function doEditStore(storeId) {
+  const data = { store_id: storeId, store_name: ($('inp-es-name')?.value||'').trim(), store_name_th: ($('inp-es-name-th')?.value||'').trim(), brand: ($('inp-es-brand')?.value||'').trim(), location: ($('inp-es-location')?.value||'').trim(), is_active: $('inp-es-active')?.value === 'true' };
+  App.showLoader();
+  try {
+    await API.adminUpdateStore(data);
+    document.getElementById('modal-edit-store')?.remove();
+    App.toast('Store updated', 'success');
+    loadAdminContent();
+  } catch(e) { showFieldError('es-error', e.message); }
+  finally { App.hideLoader(); }
+}
+
+// ─── Departments Admin Tab ───
+async function loadDeptsAdmin(container) {
+  try {
+    const data = await API.adminGetAllDepts();
+    let html = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateDept()">+ Add Dept</button></div>`;
+    if (!data.departments || data.departments.length === 0) {
+      html += '<div class="empty-state"><div class="empty-text">No departments</div></div>';
+      container.innerHTML = html;
+      return;
+    }
+    data.departments.forEach(d => {
+      const badge = d.is_active ? 'badge-approved' : 'badge-suspended';
+      html += `
+      <div class="list-item" style="cursor:default">
+        <div class="item-avatar" style="font-size:16px">\u{1F3ED}</div>
+        <div class="item-info" style="flex:1">
+          <div class="item-name">${esc(d.dept_name)} <span style="font-size:11px;color:var(--tm)">(${esc(d.dept_id)})</span></div>
+          <div class="item-meta">${esc(d.dept_name_th || '-')}</div>
+        </div>
+        <span class="item-badge ${badge}" style="margin-right:8px">${d.is_active ? 'Active' : 'Inactive'}</span>
+        <button class="btn btn-ghost btn-sm" onclick='Screens.showEditDept(${JSON.stringify({dept_id:d.dept_id,dept_name:d.dept_name||"",dept_name_th:d.dept_name_th||"",is_active:d.is_active}).replace(/\x27/g,"&#39;")})'>Edit</button>
+      </div>`;
+    });
+    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${data.departments.length} departments</div>`;
+    container.innerHTML = html;
+  } catch(e) { container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>'; }
+}
+
+function showCreateDept() {
+  const html = `
+  <div class="modal-overlay" id="modal-create-dept" onclick="if(event.target===this)this.remove()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Create Department</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="input-group"><label>Dept ID (e.g. bakery)</label><input class="input-field" id="inp-cd-id" placeholder="dept_id" style="text-transform:lowercase"></div>
+        <div class="input-group"><label>Dept Name (EN)</label><input class="input-field" id="inp-cd-name" placeholder="Department Name"></div>
+        <div class="input-group"><label>Dept Name (TH)</label><input class="input-field" id="inp-cd-name-th" placeholder="\u0e0a\u0e37\u0e48\u0e2d\u0e20\u0e32\u0e29\u0e32\u0e44\u0e17\u0e22"></div>
+        <div class="error-msg" id="cd-error"></div>
+        <button class="btn btn-gold btn-full" onclick="Screens.doCreateDept()">\u0e2a\u0e23\u0e49\u0e32\u0e07 Department</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function doCreateDept() {
+  const data = { dept_id: ($('inp-cd-id')?.value||'').trim().toLowerCase(), dept_name: ($('inp-cd-name')?.value||'').trim(), dept_name_th: ($('inp-cd-name-th')?.value||'').trim() };
+  if (!data.dept_id || !data.dept_name) return showFieldError('cd-error', 'Dept ID and Name required');
+  App.showLoader();
+  try {
+    await API.adminCreateDept(data);
+    document.getElementById('modal-create-dept')?.remove();
+    App.toast('Department created', 'success');
+    loadAdminContent();
+  } catch(e) { showFieldError('cd-error', e.message); }
+  finally { App.hideLoader(); }
+}
+
+function showEditDept(d) {
+  const html = `
+  <div class="modal-overlay" id="modal-edit-dept" onclick="if(event.target===this)this.remove()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">Edit Department</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="input-group"><label>Dept ID</label><div class="input-field" style="background:var(--bg2);cursor:default">${esc(d.dept_id)}</div></div>
+        <div class="input-group"><label>Dept Name (EN)</label><input class="input-field" id="inp-ed-name" value="${esc(d.dept_name)}"></div>
+        <div class="input-group"><label>Dept Name (TH)</label><input class="input-field" id="inp-ed-name-th" value="${esc(d.dept_name_th)}"></div>
+        <div class="input-group"><label>Status</label>
+          <select class="input-field" id="inp-ed-active">
+            <option value="true" ${d.is_active?'selected':''}>Active</option>
+            <option value="false" ${!d.is_active?'selected':''}>Inactive</option>
+          </select>
+        </div>
+        <div class="error-msg" id="ed-error"></div>
+        <button class="btn btn-gold btn-full" onclick="Screens.doEditDept('${esc(d.dept_id)}')">Save</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function doEditDept(deptId) {
+  const data = { dept_id: deptId, dept_name: ($('inp-ed-name')?.value||'').trim(), dept_name_th: ($('inp-ed-name-th')?.value||'').trim(), is_active: $('inp-ed-active')?.value === 'true' };
+  App.showLoader();
+  try {
+    await API.adminUpdateDept(data);
+    document.getElementById('modal-edit-dept')?.remove();
+    App.toast('Department updated', 'success');
+    loadAdminContent();
+  } catch(e) { showFieldError('ed-error', e.message); }
+  finally { App.hideLoader(); }
+}
+
 // EXTEND Screens OBJECT (Part 2)
 // ════════════════════════════════
 Object.assign(Screens, {
@@ -1010,6 +1236,9 @@ Object.assign(Screens, {
   showEditAccount, doEditAccount,
   showAddUser, doAddUser, showEditUser, doEditUser,
   loadModulesAdmin, showEditModule, doEditModule,
+  loadUsersAdmin,
+  loadStoresAdmin, showCreateStore, doCreateStore, showEditStore, doEditStore,
+  loadDeptsAdmin, showCreateDept, doCreateDept, showEditDept, doEditDept,
   filterRegs,
   renderRegReview, loadRegReview, reviewReg,
   renderAudit, loadAuditLog, exportAudit

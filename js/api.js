@@ -191,6 +191,19 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbz
     // Admin Update Module
     adminUpdateModule: (data) => post('admin_update_module', { ...tokenBody(), ...data }),
 
+    // Admin Store CRUD
+    adminGetAllStores: () => post('admin_get_all_stores', tokenBody()),
+    adminCreateStore: (data) => post('admin_create_store', { ...tokenBody(), ...data }),
+    adminUpdateStore: (data) => post('admin_update_store', { ...tokenBody(), ...data }),
+
+    // Admin Dept CRUD
+    adminGetAllDepts: () => post('admin_get_all_depts', tokenBody()),
+    adminCreateDept: (data) => post('admin_create_dept', { ...tokenBody(), ...data }),
+    adminUpdateDept: (data) => post('admin_update_dept', { ...tokenBody(), ...data }),
+
+    // Admin List All Users
+    adminListAllUsers: (search) => post('admin_list_all_users', { ...tokenBody(), search: search || '' }),
+
     // EP-23: Get Stores (public — no token)
     getStores: () => post('get_stores', {}),
 

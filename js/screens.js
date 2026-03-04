@@ -454,7 +454,7 @@ function launchModule(url) {
   const s = API.getSession();
   if (!s) return;
   const sep = url.includes('?') ? '&' : '?';
-  window.open(`${url}${sep}token=${s.token}`, '_blank');
+  window.open(`${url}${sep}token=${s.token}`, '_self');
 }
 
 // ════════════════════════════════

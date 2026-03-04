@@ -207,6 +207,11 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbz
     // Admin List All Users
     adminListAllUsers: (search) => post('admin_list_all_users', { ...tokenBody(), search: search || '' }),
 
+    // Module Access
+    adminGetModuleAccess: () => post('admin_get_module_access', tokenBody()),
+    adminSetModuleAccess: (account_id, module_id, module_tier) => post('admin_set_module_access', { ...tokenBody(), account_id, module_id, module_tier }),
+    adminRemoveModuleAccess: (account_id, module_id) => post('admin_remove_module_access', { ...tokenBody(), account_id, module_id }),
+
     // EP-23: Get Stores (public — no token)
     getStores: () => post('get_stores', {}),
 

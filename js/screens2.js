@@ -155,6 +155,7 @@ function renderAdmin(p) {
       <div class="admin-tab ${adminActiveTab==='user'?'active':''}" onclick="Screens.adminTab('user')">Users</div>
       <div class="admin-tab ${adminActiveTab==='store'?'active':''}" onclick="Screens.adminTab('store')">Stores</div>
       <div class="admin-tab ${adminActiveTab==='dept'?'active':''}" onclick="Screens.adminTab('dept')">Depts</div>
+      <div class="admin-tab ${adminActiveTab==='tieraccess'?'active':''}" onclick="Screens.adminTab('tieraccess')">Tier Access</div>
       <div class="admin-tab" onclick="App.go('audit')">Audit</div>
     </div>
     <div class="screen-body" id="admin-content">
@@ -188,6 +189,7 @@ async function loadAdminContent(p) {
     else if (adminActiveTab === 'user') await loadUsersAdmin(content);
     else if (adminActiveTab === 'store') await loadStoresAdmin(content);
     else if (adminActiveTab === 'dept') await loadDeptsAdmin(content);
+    else if (adminActiveTab === 'tieraccess') await loadTierAccess(content);
   } catch (err) {
     content.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">${esc(err.message)}</div></div>`;
   }
@@ -1227,6 +1229,133 @@ async function doEditDept(deptId) {
 
 // EXTEND Screens OBJECT (Part 2)
 // ════════════════════════════════
+// ─── Tier Access Tab ───
+let _tierData = null;
+
+async function loadTierAccess(container) {
+  const data = await API.adminGetModuleAccess();
+  _tierData = data;
+  renderTierGrid(container);
+}
+
+function renderTierGrid(container) {
+  const d = _tierData;
+  if (!d) return;
+
+  const mods = d.modules || [];
+  const accs = d.accounts || [];
+  const overrides = d.overrides || [];
+  const tiers = d.tiers || [];
+
+  // Build override map: key = "ACC-001|bc_order" → {module_tier, is_active}
+  const oMap = {};
+  overrides.forEach(o => { oMap[`${o.account_id}|${o.module_id}`] = o; });
+
+  // Table header
+  let hdr = `<th style="position:sticky;left:0;background:#f8f8f8;z-index:2;min-width:130px">Account</th><th style="min-width:60px">Global</th>`;
+  mods.forEach(m => { hdr += `<th style="min-width:80px">${esc(m.module_name_en || m.module_id)}</th>`; });
+
+  // Table rows
+  let rows = '';
+  accs.forEach(acc => {
+    let cells = `<td style="position:sticky;left:0;background:#fff;z-index:1;white-space:nowrap;font-weight:600">${esc(acc.display_label)}<br><span style="font-weight:400;font-size:11px;color:#888">${esc(acc.store_id || '')}</span></td>`;
+    cells += `<td style="text-align:center"><span style="background:#e8e8e8;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">${esc(acc.tier_id)}</span></td>`;
+
+    mods.forEach(m => {
+      const key = `${acc.account_id}|${m.module_id}`;
+      const ov = oMap[key];
+      if (ov && ov.is_active) {
+        cells += `<td style="text-align:center;cursor:pointer" onclick="Screens.showTierOverride('${esc(acc.account_id)}','${esc(m.module_id)}','${esc(ov.module_tier)}','${esc(acc.display_label)}','${esc(m.module_name_en || m.module_id)}')">
+          <span style="background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:700">${esc(ov.module_tier)} ★</span></td>`;
+      } else {
+        cells += `<td style="text-align:center;cursor:pointer;color:#bbb" onclick="Screens.showTierOverride('${esc(acc.account_id)}','${esc(m.module_id)}','','${esc(acc.display_label)}','${esc(m.module_name_en || m.module_id)}')">
+          <span style="font-size:12px">--- (${esc(acc.tier_id)})</span></td>`;
+      }
+    });
+    rows += `<tr>${cells}</tr>`;
+  });
+
+  container.innerHTML = `
+    <div style="font-size:12px;color:var(--tm);margin-bottom:8px">
+      <span style="background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">T5 ★</span> = มี override &nbsp;
+      <span style="color:#bbb">--- (T3)</span> = ใช้ global tier
+    </div>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:#f8f8f8">${hdr}</tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+
+  // Style table
+  const tbl = container.querySelector('table');
+  if (tbl) {
+    tbl.querySelectorAll('th,td').forEach(el => {
+      el.style.padding = '8px 6px';
+      el.style.borderBottom = '1px solid #eee';
+      el.style.textAlign = el.tagName === 'TH' ? 'center' : (el.style.textAlign || 'left');
+    });
+  }
+}
+
+function showTierOverride(accountId, moduleId, currentTier, accLabel, modLabel) {
+  const tiers = (_tierData?.tiers || []);
+  const options = tiers.map(t =>
+    `<option value="${esc(t.tier_id)}" ${t.tier_id === currentTier ? 'selected' : ''}>${esc(t.tier_id)} — ${esc(t.tier_name)}</option>`
+  ).join('');
+
+  const html = `
+  <div class="modal-overlay" id="modal-tier" onclick="if(event.target===this)this.remove()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-close" onclick="document.getElementById('modal-tier').remove()">✕</div>
+      <div class="modal-title">Module Tier Override</div>
+      <div style="font-size:13px;color:var(--tm);margin-bottom:12px">
+        <strong>${esc(accLabel)}</strong> → <strong>${esc(modLabel)}</strong>
+      </div>
+      <div class="input-group">
+        <label>Override Tier</label>
+        <select class="input-field" id="inp-tier-override">${options}</select>
+      </div>
+      <div class="error-msg" id="tier-error"></div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn btn-gold btn-full" onclick="Screens.doSetTierOverride('${esc(accountId)}','${esc(moduleId)}')">Set Override</button>
+        ${currentTier ? `<button class="btn btn-danger btn-full" onclick="Screens.doRemoveTierOverride('${esc(accountId)}','${esc(moduleId)}')">Remove</button>` : ''}
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+async function doSetTierOverride(accountId, moduleId) {
+  const tier = $('inp-tier-override')?.value;
+  if (!tier) return;
+  App.showLoader();
+  try {
+    await API.adminSetModuleAccess(accountId, moduleId, tier);
+    document.getElementById('modal-tier')?.remove();
+    App.toast('Override saved', 'success');
+    loadAdminContent();
+  } catch (e) {
+    App.hideLoader();
+    showFieldError('tier-error', e.message);
+  }
+}
+
+async function doRemoveTierOverride(accountId, moduleId) {
+  App.showLoader();
+  try {
+    await API.adminRemoveModuleAccess(accountId, moduleId);
+    document.getElementById('modal-tier')?.remove();
+    App.toast('Override removed — fallback global', 'success');
+    loadAdminContent();
+  } catch (e) {
+    App.hideLoader();
+    showFieldError('tier-error', e.message);
+  }
+}
+
+
 Object.assign(Screens, {
   renderRegister, loadRegisterDropdowns, doRegister,
   renderPending,
@@ -1242,6 +1371,7 @@ Object.assign(Screens, {
   loadUsersAdmin,
   loadStoresAdmin, showCreateStore, doCreateStore, showEditStore, doEditStore,
   loadDeptsAdmin, showCreateDept, doCreateDept, showEditDept, doEditDept,
+  loadTierAccess, showTierOverride, doSetTierOverride, doRemoveTierOverride,
   filterRegs,
   renderRegReview, loadRegReview, reviewReg,
   renderAudit, loadAuditLog, exportAudit

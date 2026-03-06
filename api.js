@@ -67,6 +67,7 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbz
       expires_at: data.expires_at
     };
     localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+    localStorage.setItem('spg_token', sessionData.token);
     return sessionData;
   }
 
@@ -86,6 +87,7 @@ let BASE_URL = localStorage.getItem('spg_api_url') || 'https://ahvzblrfzhtrjhvbz
   function clearSession() {
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(ACCOUNT_KEY);
+    localStorage.removeItem('spg_token');
   }
 
   // Temp store account info during group login flow

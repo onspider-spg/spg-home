@@ -1,5 +1,5 @@
 /**
- * Version 2.2 | 7 MAR 2026 | Siam Palette Group
+ * Version 2.3 | 7 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens2.js — Screens S7–S12
@@ -358,28 +358,32 @@ async function loadPermissions(container) {
   const data = await API.adminGetPermissions();
   const PERM_OPTIONS = ['no_access', 'view_only', 'edit', 'admin', 'super_admin'];
   
-  let headerHtml = '<th>Module</th>';
+  let headerHtml = '<th style="text-align:left;position:sticky;left:0;background:var(--s1);z-index:2;min-width:100px">Module</th>';
   data.tiers.forEach(t => {
-    headerHtml += `<th>${esc(t.tier_id)}<br><span style="font-size:9px;font-weight:400">${esc(t.tier_name)}</span></th>`;
+    const tColor = t.tier_level <= 2 ? 'var(--gold)' : t.tier_level <= 4 ? 'var(--blue)' : 'var(--tm)';
+    headerHtml += `<th style="text-align:center"><span style="color:${tColor};font-weight:700">${esc(t.tier_id)}</span><br><span style="font-size:8px;font-weight:400;color:var(--tm)">${esc(t.tier_name)}</span></th>`;
   });
 
   let bodyHtml = '';
   data.modules.forEach(m => {
-    bodyHtml += `<tr><td>${esc(m.module_name)}</td>`;
+    bodyHtml += `<tr><td style="position:sticky;left:0;background:#fff;z-index:1;font-weight:600">${esc(m.module_name)}</td>`;
     data.tiers.forEach(t => {
       const level = m.permissions[t.tier_id] || 'no_access';
       const editable = t.tier_level > 1;
       if (editable) {
         let opts = PERM_OPTIONS.map(p => `<option value="${p}" ${p===level?'selected':''}>${p.replace('_',' ')}</option>`).join('');
-        bodyHtml += `<td><select class="perm-select perm-${level}" onchange="Screens.setPerm('${esc(m.module_id)}','${esc(t.tier_id)}',this.value)">${opts}</select></td>`;
+        bodyHtml += `<td style="text-align:center"><select class="perm-select perm-${level}" onchange="Screens.setPerm('${esc(m.module_id)}','${esc(t.tier_id)}',this.value)">${opts}</select></td>`;
       } else {
-        bodyHtml += `<td><span class="perm-cell perm-${level}">${level.replace('_', ' ')}</span></td>`;
+        bodyHtml += `<td style="text-align:center"><span class="perm-cell perm-${level}">${level.replace('_', ' ')}</span></td>`;
       }
     });
     bodyHtml += '</tr>';
   });
 
   container.innerHTML = `
+  <div style="padding:0 0 8px;font-size:11px;color:var(--blue);background:var(--blue-bg);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:10px">
+    💡 เปลี่ยน dropdown แล้ว save ทันทีทีละ cell — T1 เท่านั้นที่แก้ได้
+  </div>
   <div class="perm-table-wrap">
     <table class="perm-table">
       <thead><tr>${headerHtml}</tr></thead>
@@ -469,21 +473,27 @@ async function loadBridge(container) {
     return;
   }
 
-  let html = '';
+  let rows = '';
   data.bridges.forEach(b => {
     const isOn = b.is_enabled;
-    html += `
-    <div class="list-item" style="cursor:default">
-      <div class="item-avatar">${isOn ? '🟢' : '🔴'}</div>
-      <div class="item-info">
-        <div class="item-name">${esc(b.source_module)} → ${esc(b.target_module)}</div>
-        <div class="item-meta">${esc(b.data_type)} · ${esc(b.description)}</div>
-      </div>
-      <button class="btn btn-sm ${isOn ? 'btn-danger' : 'btn-gold'}" onclick="Screens.toggleBridge('${esc(b.bridge_id)}',${!isOn})">${isOn ? 'ปิด' : 'เปิด'}</button>
-    </div>`;
+    rows += `
+    <tr>
+      <td style="font-weight:600">${esc(b.source_module)} → ${esc(b.target_module)}</td>
+      <td style="font-size:11px;color:var(--td)">${esc(b.data_type)}</td>
+      <td style="font-size:11px;color:var(--td)">${esc(b.description || '-')}</td>
+      <td style="text-align:center"><span class="item-badge ${isOn ? 'badge-approved' : 'badge-suspended'}" style="margin:0">${isOn ? 'ON' : 'OFF'}</span></td>
+      <td style="text-align:center"><button class="btn btn-sm ${isOn ? 'btn-danger' : 'btn-gold'}" style="padding:4px 10px;font-size:10px" onclick="Screens.toggleBridge('${esc(b.bridge_id)}',${!isOn})">${isOn ? 'ปิด' : 'เปิด'}</button></td>
+    </tr>`;
   });
 
-  container.innerHTML = html;
+  container.innerHTML = `
+  <div style="font-size:11px;color:var(--tm);margin-bottom:8px">Sale Daily ↔ Finance Bridge Config</div>
+  <div class="perm-table-wrap">
+    <table class="perm-table" style="font-size:12px">
+      <thead><tr><th style="text-align:left">Bridge</th><th>Type</th><th>Description</th><th>Status</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
 }
 
 async function toggleBridge(bridgeId, enable) {
@@ -963,28 +973,27 @@ async function loadModulesAdmin(container) {
       container.innerHTML = '<div class="empty-state"><div class="empty-text">No modules</div></div>';
       return;
     }
-    let html = '';
+    let rows = '';
     data.modules.forEach(m => {
       const statusBadge = m.status === 'active' ? 'badge-approved' : m.status === 'coming_soon' ? 'badge-pending' : 'badge-suspended';
-      const urlShort = (m.app_url || 'No URL').length > 40 ? (m.app_url || '').substring(0, 40) + '...' : (m.app_url || 'No URL');
-      html += `
-      <div class="list-item" style="cursor:default">
-        <div class="item-avatar" style="font-size:20px">${esc(m.icon || '\u{1F4E6}')}</div>
-        <div class="item-info" style="flex:1">
-          <div class="item-name">${esc(m.module_name)} <span style="font-size:11px;color:var(--tm)">(${esc(m.module_id)})</span></div>
-          <div class="item-meta" style="word-break:break-all">${esc(urlShort)}</div>
-        </div>
-        <span class="item-badge ${statusBadge}" style="margin-right:8px">${esc(m.status)}</span>
-        <button class="btn btn-ghost btn-sm" onclick='Screens.showEditModule(${JSON.stringify({
-          module_id: m.module_id, module_name: m.module_name || "",
-          module_name_en: m.module_name_en || "", icon: m.icon || "",
-          app_url: m.app_url || "", status: m.status || "inactive",
-          sort_order: m.sort_order || 0
-        }).replace(/\x27/g, "&#39;")})'>Edit</button>
-      </div>`;
+      const urlShort = (m.app_url || '—').length > 35 ? (m.app_url || '').substring(0, 35) + '…' : (m.app_url || '—');
+      rows += `
+      <tr>
+        <td style="text-align:center;font-size:18px">${esc(m.icon || '📦')}</td>
+        <td style="font-weight:600">${esc(m.module_name)}</td>
+        <td style="font-size:11px;color:var(--td)">${esc(m.module_name_en || '-')}</td>
+        <td style="font-size:9px;color:var(--tm);word-break:break-all">${esc(urlShort)}</td>
+        <td style="text-align:center"><span class="item-badge ${statusBadge}" style="margin:0">${esc(m.status)}</span></td>
+        <td style="text-align:center"><button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px" onclick='Screens.showEditModule(${JSON.stringify({module_id:m.module_id,module_name:m.module_name||"",module_name_en:m.module_name_en||"",icon:m.icon||"",app_url:m.app_url||"",status:m.status||"inactive",sort_order:m.sort_order||0}).replace(/\x27/g,"&#39;")})'>✏️</button></td>
+      </tr>`;
     });
-    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${data.modules.length} modules</div>`;
-    container.innerHTML = html;
+    container.innerHTML = `
+    <div class="perm-table-wrap">
+      <table class="perm-table" style="font-size:12px">
+        <thead><tr><th>Icon</th><th style="text-align:left">Module</th><th style="text-align:left">Name (EN)</th><th style="text-align:left">URL</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
   } catch(e) {
     container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>';
   }
@@ -1046,23 +1055,32 @@ async function loadUsersAdmin(container) {
   try {
     const q = $('user-admin-search')?.value || '';
     const data = await API.adminListAllUsers(q);
+    let searchBar = `<div class="admin-toolbar"><input type="text" class="input-field input-sm" id="user-admin-search" placeholder="🔍 Search users..." value="${esc(q)}" onkeyup="if(event.key==='Enter')Screens.loadUsersAdmin($('admin-content'))"></div>`;
     if (!data.users || data.users.length === 0) {
-      container.innerHTML = `<div class="admin-toolbar"><input type="text" class="input-field input-sm" id="user-admin-search" placeholder="Search users..." value="${esc(q)}" onkeyup="if(event.key==='Enter')Screens.loadUsersAdmin($('admin-content'))"></div><div class="empty-state"><div class="empty-text">No users found</div></div>`;
+      container.innerHTML = searchBar + '<div class="empty-state"><div class="empty-text">No users found</div></div>';
       return;
     }
-    let html = `<div class="admin-toolbar"><input type="text" class="input-field input-sm" id="user-admin-search" placeholder="Search users..." value="${esc(q)}" onkeyup="if(event.key==='Enter')Screens.loadUsersAdmin($('admin-content'))"></div>`;
+    let rows = '';
     data.users.forEach(u => {
-      html += `
-      <div class="list-item" onclick="App.go('account-detail',{account_id:'${esc(u.account_id)}'})">
-        <div class="item-avatar">${u.is_active ? '\u{1F7E2}' : '\u{1F534}'}</div>
-        <div class="item-info" style="flex:1">
-          <div class="item-name">${esc(u.display_name)} <span style="font-size:11px;color:var(--tm)">(${esc(u.user_id)})</span></div>
-          <div class="item-meta">${esc(u.account_label)} \u00B7 ${esc(u.store_id || '-')} \u00B7 ${esc(u.dept_id || '-')} \u00B7 ${esc(u.account_type)}</div>
-        </div>
-      </div>`;
+      rows += `
+      <tr style="cursor:pointer" onclick="App.go('account-detail',{account_id:'${esc(u.account_id)}'})">
+        <td style="text-align:center">${u.is_active ? '🟢' : '🔴'}</td>
+        <td style="font-weight:600">${esc(u.display_name)}</td>
+        <td style="font-size:11px;color:var(--td)">${esc(u.account_label)}</td>
+        <td style="text-align:center">${esc(u.store_id || '-')}</td>
+        <td style="text-align:center">${esc(u.dept_id || '-')}</td>
+        <td style="text-align:center;font-size:11px;color:var(--tm)">${esc(u.account_type)}</td>
+        <td style="color:var(--blue);font-size:10px;text-align:center">→</td>
+      </tr>`;
     });
-    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${data.total} users</div>`;
-    container.innerHTML = html;
+    container.innerHTML = searchBar + `
+    <div style="font-size:11px;color:var(--tm);padding:0 16px 6px">${data.total} users</div>
+    <div class="perm-table-wrap">
+      <table class="perm-table" style="font-size:12px">
+        <thead><tr><th></th><th style="text-align:left">Name</th><th style="text-align:left">Account</th><th>Store</th><th>Dept</th><th>Type</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
   } catch(e) { container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>'; }
 }
 
@@ -1070,27 +1088,30 @@ async function loadUsersAdmin(container) {
 async function loadStoresAdmin(container) {
   try {
     const data = await API.adminGetAllStores();
-    let html = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateStore()">+ Add Store</button></div>`;
     if (!data.stores || data.stores.length === 0) {
-      html += '<div class="empty-state"><div class="empty-text">No stores</div></div>';
-      container.innerHTML = html;
+      container.innerHTML = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateStore()">+ เพิ่มร้าน</button></div><div class="empty-state"><div class="empty-text">No stores</div></div>`;
       return;
     }
+    let rows = '';
     data.stores.forEach(s => {
-      const badge = s.is_active ? 'badge-approved' : 'badge-suspended';
-      html += `
-      <div class="list-item" style="cursor:default">
-        <div class="item-avatar" style="font-size:16px">\u{1F3EA}</div>
-        <div class="item-info" style="flex:1">
-          <div class="item-name">${esc(s.store_name)} <span style="font-size:11px;color:var(--tm)">(${esc(s.store_id)})</span></div>
-          <div class="item-meta">${esc(s.store_name_th || '-')} \u00B7 ${esc(s.brand || '-')} \u00B7 ${esc(s.location || '-')}</div>
-        </div>
-        <span class="item-badge ${badge}" style="margin-right:8px">${s.is_active ? 'Active' : 'Inactive'}</span>
-        <button class="btn btn-ghost btn-sm" onclick='Screens.showEditStore(${JSON.stringify({store_id:s.store_id,store_name:s.store_name||"",store_name_th:s.store_name_th||"",brand:s.brand||"",location:s.location||"",is_active:s.is_active}).replace(/\x27/g,"&#39;")})'>Edit</button>
-      </div>`;
+      rows += `
+      <tr>
+        <td style="font-weight:700">${esc(s.store_id)}</td>
+        <td>${esc(s.store_name_th || '-')}</td>
+        <td>${esc(s.store_name)}</td>
+        <td style="font-size:11px;color:var(--td)">${esc(s.brand || '-')}</td>
+        <td style="text-align:center"><span class="item-badge ${s.is_active ? 'badge-approved' : 'badge-suspended'}" style="margin:0">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td style="text-align:center"><button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px" onclick='Screens.showEditStore(${JSON.stringify({store_id:s.store_id,store_name:s.store_name||"",store_name_th:s.store_name_th||"",brand:s.brand||"",location:s.location||"",is_active:s.is_active}).replace(/\x27/g,"&#39;")})'>✏️</button></td>
+      </tr>`;
     });
-    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${data.stores.length} stores</div>`;
-    container.innerHTML = html;
+    container.innerHTML = `
+    <div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateStore()">+ เพิ่มร้าน</button></div>
+    <div class="perm-table-wrap">
+      <table class="perm-table" style="font-size:12px">
+        <thead><tr><th style="text-align:left">Store ID</th><th style="text-align:left">Name (TH)</th><th style="text-align:left">Name (EN)</th><th style="text-align:left">Brand</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
   } catch(e) { container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>'; }
 }
 
@@ -1169,27 +1190,29 @@ async function doEditStore(storeId) {
 async function loadDeptsAdmin(container) {
   try {
     const data = await API.adminGetAllDepts();
-    let html = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateDept()">+ Add Dept</button></div>`;
     if (!data.departments || data.departments.length === 0) {
-      html += '<div class="empty-state"><div class="empty-text">No departments</div></div>';
-      container.innerHTML = html;
+      container.innerHTML = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateDept()">+ เพิ่มแผนก</button></div><div class="empty-state"><div class="empty-text">No departments</div></div>`;
       return;
     }
+    let rows = '';
     data.departments.forEach(d => {
-      const badge = d.is_active ? 'badge-approved' : 'badge-suspended';
-      html += `
-      <div class="list-item" style="cursor:default">
-        <div class="item-avatar" style="font-size:16px">\u{1F3ED}</div>
-        <div class="item-info" style="flex:1">
-          <div class="item-name">${esc(d.dept_name)} <span style="font-size:11px;color:var(--tm)">(${esc(d.dept_id)})</span></div>
-          <div class="item-meta">${esc(d.dept_name_th || '-')}</div>
-        </div>
-        <span class="item-badge ${badge}" style="margin-right:8px">${d.is_active ? 'Active' : 'Inactive'}</span>
-        <button class="btn btn-ghost btn-sm" onclick='Screens.showEditDept(${JSON.stringify({dept_id:d.dept_id,dept_name:d.dept_name||"",dept_name_th:d.dept_name_th||"",is_active:d.is_active}).replace(/\x27/g,"&#39;")})'>Edit</button>
-      </div>`;
+      rows += `
+      <tr>
+        <td style="font-weight:700">${esc(d.dept_id)}</td>
+        <td>${esc(d.dept_name_th || '-')}</td>
+        <td>${esc(d.dept_name)}</td>
+        <td style="text-align:center"><span class="item-badge ${d.is_active ? 'badge-approved' : 'badge-suspended'}" style="margin:0">${d.is_active ? 'Active' : 'Inactive'}</span></td>
+        <td style="text-align:center"><button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px" onclick='Screens.showEditDept(${JSON.stringify({dept_id:d.dept_id,dept_name:d.dept_name||"",dept_name_th:d.dept_name_th||"",is_active:d.is_active}).replace(/\x27/g,"&#39;")})'>✏️</button></td>
+      </tr>`;
     });
-    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${data.departments.length} departments</div>`;
-    container.innerHTML = html;
+    container.innerHTML = `
+    <div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateDept()">+ เพิ่มแผนก</button></div>
+    <div class="perm-table-wrap">
+      <table class="perm-table" style="font-size:12px">
+        <thead><tr><th style="text-align:left">Dept ID</th><th style="text-align:left">Name (TH)</th><th style="text-align:left">Name (EN)</th><th>Status</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
   } catch(e) { container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>'; }
 }
 
@@ -1280,55 +1303,51 @@ function renderTierGrid(container) {
   const overrides = d.overrides || [];
   const tiers = d.tiers || [];
 
-  // Build override map: key = "ACC-001|bc_order" → {module_tier, is_active}
   const oMap = {};
   overrides.forEach(o => { oMap[`${o.account_id}|${o.module_id}`] = o; });
 
-  // Table header
-  let hdr = `<th style="position:sticky;left:0;background:#f8f8f8;z-index:2;min-width:130px">Account</th><th style="min-width:60px">Global</th>`;
-  mods.forEach(m => { hdr += `<th style="min-width:80px">${esc(m.module_name_en || m.module_id)}</th>`; });
+  const tierColor = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold)' : l<=4 ? 'var(--blue)' : 'var(--tm)'; };
+  const tierBg = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold-bg2)' : l<=4 ? 'var(--blue-bg)' : 'var(--s2)'; };
 
-  // Table rows
+  let hdr = `<th style="position:sticky;left:0;background:var(--s1);z-index:2;min-width:130px;text-align:left">Account</th><th style="text-align:center;min-width:60px">Global</th>`;
+  mods.forEach(m => { hdr += `<th style="min-width:90px;text-align:center">${esc(m.module_name_en || m.module_id)}</th>`; });
+
   let rows = '';
   accs.forEach(acc => {
-    let cells = `<td style="position:sticky;left:0;background:#fff;z-index:1;white-space:nowrap;font-weight:600">${esc(acc.display_label)}<br><span style="font-weight:400;font-size:11px;color:#888">${esc(acc.store_id || '')}</span></td>`;
-    cells += `<td style="text-align:center"><span style="background:#e8e8e8;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600">${esc(acc.tier_id)}</span></td>`;
+    let cells = `<td style="position:sticky;left:0;background:#fff;z-index:1;white-space:nowrap"><span style="font-weight:600">${esc(acc.display_label)}</span><br><span style="font-size:10px;color:var(--tm)">${esc(acc.store_id || '')}</span></td>`;
+    cells += `<td style="text-align:center"><span style="padding:2px 8px;border-radius:8px;background:${tierBg(acc.tier_id)};color:${tierColor(acc.tier_id)};font-size:11px;font-weight:600">${esc(acc.tier_id)}</span></td>`;
 
     mods.forEach(m => {
       const key = `${acc.account_id}|${m.module_id}`;
       const ov = oMap[key];
       if (ov && ov.is_active) {
+        const dir = parseInt((ov.module_tier||'T9').replace('T','')) < parseInt((acc.tier_id||'T9').replace('T','')) ? '⬆' : '⬇';
         cells += `<td style="text-align:center;cursor:pointer" onclick="Screens.showTierOverride('${esc(acc.account_id)}','${esc(m.module_id)}','${esc(ov.module_tier)}','${esc(acc.display_label)}','${esc(m.module_name_en || m.module_id)}')">
-          <span style="background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:700">${esc(ov.module_tier)} ★</span></td>`;
+          <span style="background:var(--orange-bg);color:var(--orange);padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">${esc(ov.module_tier)} ${dir}</span>
+          <div style="font-size:9px;color:var(--orange)">override</div></td>`;
       } else {
-        cells += `<td style="text-align:center;cursor:pointer;color:#bbb" onclick="Screens.showTierOverride('${esc(acc.account_id)}','${esc(m.module_id)}','','${esc(acc.display_label)}','${esc(m.module_name_en || m.module_id)}')">
-          <span style="font-size:12px">--- (${esc(acc.tier_id)})</span></td>`;
+        cells += `<td style="text-align:center;cursor:pointer" onclick="Screens.showTierOverride('${esc(acc.account_id)}','${esc(m.module_id)}','','${esc(acc.display_label)}','${esc(m.module_name_en || m.module_id)}')">
+          <span style="font-size:11px;color:var(--tm)">— (${esc(acc.tier_id)})</span>
+          <div style="font-size:9px;color:var(--tm)">= global</div></td>`;
       }
     });
     rows += `<tr>${cells}</tr>`;
   });
 
   container.innerHTML = `
-    <div style="font-size:12px;color:var(--tm);margin-bottom:8px">
-      <span style="background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700">T5 ★</span> = มี override &nbsp;
-      <span style="color:#bbb">--- (T3)</span> = ใช้ global tier
+    <div style="font-size:11px;color:var(--tm);margin-bottom:8px">
+      กำหนด Tier ของแต่ละ account ต่อ module — override global tier ได้
     </div>
-    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-      <table style="width:100%;border-collapse:collapse;font-size:13px">
-        <thead><tr style="background:#f8f8f8">${hdr}</tr></thead>
+    <div style="display:flex;gap:6px;margin-bottom:10px;font-size:11px">
+      <span style="padding:3px 10px;border-radius:8px;background:var(--orange-bg);color:var(--orange);font-weight:600">T3 ⬆</span> = override
+      <span style="color:var(--tm)">— (T3) = global</span>
+    </div>
+    <div class="perm-table-wrap">
+      <table class="perm-table" style="font-size:12px">
+        <thead><tr>${hdr}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
-
-  // Style table
-  const tbl = container.querySelector('table');
-  if (tbl) {
-    tbl.querySelectorAll('th,td').forEach(el => {
-      el.style.padding = '8px 6px';
-      el.style.borderBottom = '1px solid #eee';
-      el.style.textAlign = el.tagName === 'TH' ? 'center' : (el.style.textAlign || 'left');
-    });
-  }
 }
 
 function showTierOverride(accountId, moduleId, currentTier, accLabel, modLabel) {

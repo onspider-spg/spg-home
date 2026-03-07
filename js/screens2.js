@@ -1,4 +1,5 @@
 /**
+ * Version 2.1 | 7 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens2.js — Screens S7–S12
@@ -21,32 +22,36 @@ function renderRegister() {
     <div class="screen-body">
       <form class="reg-form" onsubmit="Screens.doRegister(event)">
         <div class="input-group">
-          <label>Email *</label>
-          <input type="email" class="input-field" id="inp-reg-email" placeholder="email@example.com" required>
+          <label>Email / Username *</label>
+          <input type="email" class="input-field" id="inp-reg-email" placeholder="email@example.com หรือ username" required>
         </div>
         <div class="input-group">
           <label>Password (min 8 characters) *</label>
           <input type="password" class="input-field" id="inp-reg-pass" placeholder="••••••••" required>
         </div>
-        <div class="input-group">
-          <label>Full Name *</label>
-          <input type="text" class="input-field" id="inp-reg-full" placeholder="First Last" required>
-        </div>
-        <div class="input-group">
-          <label>Display Name *</label>
-          <input type="text" class="input-field" id="inp-reg-nick" placeholder="e.g. Mint" required>
+        <div style="display:flex;gap:10px">
+          <div class="input-group" style="flex:1">
+            <label>Full Name *</label>
+            <input type="text" class="input-field" id="inp-reg-full" placeholder="First Last" required>
+          </div>
+          <div class="input-group" style="flex:1">
+            <label>Display Name *</label>
+            <input type="text" class="input-field" id="inp-reg-nick" placeholder="e.g. Mint" required>
+          </div>
         </div>
         <div class="input-group">
           <label>Phone *</label>
           <input type="tel" class="input-field" id="inp-reg-phone" placeholder="0412345678" required>
         </div>
-        <div class="input-group">
-          <label>Store</label>
-          <select class="input-field" id="inp-reg-store"><option value="">Loading...</option></select>
-        </div>
-        <div class="input-group">
-          <label>Department</label>
-          <select class="input-field" id="inp-reg-dept"><option value="">Loading...</option></select>
+        <div style="display:flex;gap:10px">
+          <div class="input-group" style="flex:1">
+            <label>Store</label>
+            <select class="input-field" id="inp-reg-store"><option value="">Loading...</option></select>
+          </div>
+          <div class="input-group" style="flex:1">
+            <label>Department</label>
+            <select class="input-field" id="inp-reg-dept"><option value="">Loading...</option></select>
+          </div>
         </div>
         <div class="input-group">
           <label>Note (optional)</label>
@@ -117,15 +122,24 @@ function renderPending(params = {}) {
   return `
   <div class="screen screen-enter">
     <div class="pending-screen">
-      <div class="pending-icon" style="font-size:40px;color:var(--gold)">◷</div>
-      <div class="pending-title">Pending Approval</div>
+      <div style="font-size:48px;margin-bottom:12px">⏳</div>
+      <div class="pending-title">รอการอนุมัติ</div>
       <div class="pending-msg">
-        Your registration has been submitted.<br>
-        ${rid ? `Reference: <strong>${esc(rid)}</strong><br>` : ''}
-        Please wait for admin approval.<br>
-        You can sign in once approved.
+        การลงทะเบียนของคุณอยู่ระหว่างการตรวจสอบ<br>
+        Admin จะอนุมัติภายใน 24 ชม.
       </div>
-      <button class="btn btn-outline" style="margin-top:24px" onclick="App.go('login')">Back to Sign In</button>
+      ${rid ? `
+      <div style="padding:12px;background:var(--s1);border-radius:var(--radius-sm);text-align:left;font-size:12px;margin:16px 0;width:100%;max-width:320px">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--b1)">
+          <span style="color:var(--td)">Reference</span>
+          <span style="font-weight:600">${esc(rid)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0">
+          <span style="color:var(--td)">Status</span>
+          <span style="padding:2px 8px;border-radius:8px;background:var(--orange-bg);color:var(--orange);font-size:10px;font-weight:600">Pending</span>
+        </div>
+      </div>` : ''}
+      <button class="btn btn-outline" style="margin-top:12px" onclick="App.go('login')">← กลับ Login</button>
     </div>
   </div>`;
 }
@@ -142,21 +156,18 @@ function renderAdmin(p) {
 
   return `
   <div class="screen screen-enter">
-    <div class="header-bar">
-      <button class="back-btn" onclick="App.go('dashboard')">←</button>
-      <div class="header-title">Admin Panel</div>
-    </div>
+    ${Screens.renderTopbar('Siam Palette Group', 'Admin · ' + esc(s.display_name || ''))}
     <div class="admin-tabs">
       <div class="admin-tab ${adminActiveTab==='accounts'?'active':''}" onclick="Screens.adminTab('accounts')">Accounts</div>
       <div class="admin-tab ${adminActiveTab==='permissions'?'active':''}" onclick="Screens.adminTab('permissions')">Permissions</div>
+      <div class="admin-tab ${adminActiveTab==='tieraccess'?'active':''}" onclick="Screens.adminTab('tieraccess')">Tier Access</div>
       <div class="admin-tab ${adminActiveTab==='registrations'?'active':''}" onclick="Screens.adminTab('registrations')">Requests</div>
       <div class="admin-tab ${adminActiveTab==='bridge'?'active':''}" onclick="Screens.adminTab('bridge')">Bridge</div>
-      <div class="admin-tab ${adminActiveTab==='modules'?'active':'' }" onclick="Screens.adminTab('modules')">Modules</div>
+      <div class="admin-tab ${adminActiveTab==='modules'?'active':''}" onclick="Screens.adminTab('modules')">Modules</div>
       <div class="admin-tab ${adminActiveTab==='user'?'active':''}" onclick="Screens.adminTab('user')">Users</div>
       <div class="admin-tab ${adminActiveTab==='store'?'active':''}" onclick="Screens.adminTab('store')">Stores</div>
       <div class="admin-tab ${adminActiveTab==='dept'?'active':''}" onclick="Screens.adminTab('dept')">Depts</div>
-      <div class="admin-tab ${adminActiveTab==='tieraccess'?'active':''}" onclick="Screens.adminTab('tieraccess')">Tier Access</div>
-      <div class="admin-tab" onclick="App.go('audit')">Audit</div>
+      <div class="admin-tab" style="color:var(--purple)" onclick="App.go('audit')">Audit</div>
     </div>
     <div class="screen-body" id="admin-content">
       <div style="text-align:center;padding:30px;color:var(--tm)">กำลังโหลด...</div>
@@ -170,7 +181,7 @@ function adminTab(tab) {
   // Update tab buttons
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
   const tabs = document.querySelectorAll('.admin-tab');
-  const idx = ['accounts','permissions','registrations','bridge','modules','user','store','dept'].indexOf(tab);
+  const idx = ['accounts','permissions','tieraccess','registrations','bridge','modules','user','store','dept'].indexOf(tab);
   if (idx >= 0 && tabs[idx]) tabs[idx].classList.add('active');
   loadAdminContent();
 }
@@ -479,7 +490,10 @@ function renderAccountDetail(params = {}) {
   <div class="screen screen-enter">
     <div class="header-bar">
       <button class="back-btn" onclick="App.go('admin')">←</button>
-      <div class="header-title">Account Detail</div>
+      <div style="flex:1">
+        <div class="header-title">Account Detail</div>
+        <div class="header-sub">← Accounts</div>
+      </div>
     </div>
     <div class="screen-body" id="acc-detail-content">
       <div style="text-align:center;padding:30px;color:var(--tm)">กำลังโหลด...</div>
@@ -499,14 +513,14 @@ async function loadAccountDetail(accountId) {
 
     content.innerHTML = `
     <div class="profile-avatar">
-      <div class="emoji">${acc.account_type === 'group' ? '👥' : '👤'}</div>
+      <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--gold-bg2),#f9e8c0);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--gold);margin:0 auto">${esc((acc.display_label || '?').charAt(0).toUpperCase())}</div>
       <div class="name">${esc(acc.display_label)}</div>
       <div class="sub">${esc(acc.username)} · ${esc(acc.account_id)}</div>
     </div>
     <div class="profile-section">
       <div class="profile-row"><span class="label">Type</span><span class="value">${esc(acc.account_type)}</span></div>
-      <div class="profile-row"><span class="label">Tier</span><span class="value">${esc(acc.tier_id)}</span></div>
-      <div class="profile-row"><span class="label">Status</span><span class="value">${esc(acc.status)}</span></div>
+      <div class="profile-row"><span class="label">Tier</span><span class="value"><span style="padding:2px 8px;border-radius:8px;background:var(--gold-bg2);color:var(--gold);font-size:11px;font-weight:600">${esc(acc.tier_id)}</span></span></div>
+      <div class="profile-row"><span class="label">Status</span><span class="value"><span class="item-badge ${acc.status === 'approved' ? 'badge-approved' : acc.status === 'suspended' ? 'badge-suspended' : 'badge-pending'}" style="margin:0">${esc(acc.status)}</span></span></div>
       <div class="profile-row"><span class="label">Store</span><span class="value">${esc(acc.store_id || '-')}</span></div>
       <div class="profile-row"><span class="label">Department</span><span class="value">${esc(acc.dept_id || '-')}</span></div>
       <div class="profile-row"><span class="label">Users</span><span class="value">${acc.user_count}</span></div>
@@ -520,10 +534,11 @@ async function loadAccountDetail(accountId) {
       </div>
       <div id="acc-users-list"><div style="text-align:center;padding:10px;color:var(--tm);font-size:12px">Loading users...</div></div>
     </div>
-    <div style="padding:16px;display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-outline btn-full" onclick="Screens.showEditAccount('${esc(acc.account_id)}')">Edit Account</button>
-      ${acc.status === 'approved' ? `<button class="btn btn-danger btn-full" onclick="Screens.suspendAccount('${esc(acc.account_id)}')">Suspend Account</button>` : ''}
-      ${acc.status === 'suspended' ? `<button class="btn btn-gold btn-full" onclick="Screens.reactivateAccount('${esc(acc.account_id)}')">Reactivate Account</button>` : ''}
+    <div style="display:flex;flex-direction:column;gap:6px;padding-top:8px">
+      <button class="btn btn-outline btn-full" onclick="Screens.showEditAccount('${esc(acc.account_id)}')">✏️ Edit Account</button>
+      <button class="btn btn-outline btn-full" style="color:var(--td)" onclick="App.toast('Reset password — coming soon','info')">🔑 Reset Password</button>
+      ${acc.status === 'approved' ? `<button class="btn btn-danger btn-full" onclick="Screens.suspendAccount('${esc(acc.account_id)}')">🚫 Suspend Account</button>` : ''}
+      ${acc.status === 'suspended' ? `<button class="btn btn-gold btn-full" onclick="Screens.reactivateAccount('${esc(acc.account_id)}')">✅ Reactivate Account</button>` : ''}
     </div>`;
     // Load users for this account
     try {
@@ -651,8 +666,11 @@ function renderRegReview(params = {}) {
   return `
   <div class="screen screen-enter">
     <div class="header-bar">
-      <button class="back-btn" onclick="App.go('admin')">←</button>
-      <div class="header-title">Review Request</div>
+      <button class="back-btn" onclick="App.go('admin',{tab:'registrations'})">←</button>
+      <div style="flex:1">
+        <div class="header-title">Registration Review</div>
+        <div class="header-sub">← Requests</div>
+      </div>
     </div>
     <div class="screen-body" id="reg-review-content">
       <div style="text-align:center;padding:30px;color:var(--tm)">กำลังโหลด...</div>
@@ -671,41 +689,38 @@ async function loadRegReview(requestId) {
     _regDetail = req;
 
     content.innerHTML = `
-    <div class="profile-section" style="margin:16px">
-      <div class="profile-row"><span class="label">หมายเลข</span><span class="value">${esc(req.request_id)}</span></div>
-      <div class="profile-row"><span class="label">Username</span><span class="value">${esc(req.username)}</span></div>
-      <div class="profile-row"><span class="label">ชื่อ-นามสกุล</span><span class="value">${esc(req.full_name)}</span></div>
-      <div class="profile-row"><span class="label">ชื่อแสดง</span><span class="value">${esc(req.display_name)}</span></div>
-      <div class="profile-row"><span class="label">อีเมล</span><span class="value">${esc(req.email || '-')}</span></div>
-      <div class="profile-row"><span class="label">เบอร์โทร</span><span class="value">${esc(req.phone || '-')}</span></div>
-      <div class="profile-row"><span class="label">ร้าน</span><span class="value">${esc(req.requested_store_id || '-')}</span></div>
-      <div class="profile-row"><span class="label">แผนก</span><span class="value">${esc(req.requested_dept_id || '-')}</span></div>
-      <div class="profile-row"><span class="label">หมายเหตุ</span><span class="value">${esc(req.note || '-')}</span></div>
-      <div class="profile-row"><span class="label">ส่งเมื่อ</span><span class="value">${formatDate(req.submitted_at)}</span></div>
-      <div class="profile-row"><span class="label">สถานะ</span><span class="value">${esc(req.status)}</span></div>
-      ${req.reviewed_by ? `<div class="profile-row"><span class="label">พิจารณาโดย</span><span class="value">${esc(req.reviewed_by)}</span></div>` : ''}
-      ${req.reviewed_at ? `<div class="profile-row"><span class="label">พิจารณาเมื่อ</span><span class="value">${formatDate(req.reviewed_at)}</span></div>` : ''}
+    <div style="padding:14px;background:var(--orange-bg);border:1px solid rgba(217,119,6,0.15);border-radius:var(--radius);margin-bottom:12px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:8px">${esc(req.display_name || req.full_name)}</div>
+      <div style="font-size:12px;line-height:2;color:var(--t)">
+        <div><span style="color:var(--td)">Email:</span> ${esc(req.username || req.email || '-')}</div>
+        <div><span style="color:var(--td)">Phone:</span> ${esc(req.phone || '-')}</div>
+        <div><span style="color:var(--td)">Store:</span> ${esc(req.requested_store_id || '-')}</div>
+        <div><span style="color:var(--td)">Dept:</span> ${esc(req.requested_dept_id || '-')}</div>
+        ${req.note ? `<div><span style="color:var(--td)">Note:</span> ${esc(req.note)}</div>` : ''}
+        <div><span style="color:var(--td)">Submitted:</span> ${formatDate(req.submitted_at)}</div>
+        <div><span style="color:var(--td)">Status:</span> <span class="item-badge ${req.status === 'pending' ? 'badge-pending' : req.status === 'approved' ? 'badge-approved' : 'badge-suspended'}" style="margin:0">${esc(req.status)}</span></div>
+      </div>
+      ${req.reviewed_by ? `<div style="font-size:11px;color:var(--td);margin-top:6px;border-top:1px solid rgba(217,119,6,0.15);padding-top:6px">พิจารณาโดย: ${esc(req.reviewed_by)} · ${formatDate(req.reviewed_at)}</div>` : ''}
     </div>
     ${req.status === 'pending' ? `
-    <div style="padding:0 16px 8px">
-      <div class="input-group">
-        <label>Tier ที่จะกำหนด</label>
-        <select class="input-field" id="inp-rev-tier">
-          <option value="T5" selected>T5 — Staff</option>
-          <option value="T6">T6 — Junior</option>
-          <option value="T7">T7 — Viewer</option>
-          <option value="T4">T4 — Senior</option>
-          <option value="T3">T3 — Manager</option>
-        </select>
-      </div>
-      <div class="input-group" style="margin-top:8px">
-        <label>หมายเหตุ Admin</label>
-        <textarea class="input-field" id="inp-rev-note" placeholder="ไม่บังคับ"></textarea>
-      </div>
+    <div style="font-size:11px;font-weight:700;color:var(--tm);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Assign (if approve)</div>
+    <div class="input-group" style="margin-bottom:10px">
+      <label>Tier *</label>
+      <select class="input-field" id="inp-rev-tier">
+        <option value="T5" selected>T5 — Staff</option>
+        <option value="T6">T6 — Junior</option>
+        <option value="T7">T7 — Viewer</option>
+        <option value="T4">T4 — Senior</option>
+        <option value="T3">T3 — Manager</option>
+      </select>
     </div>
-    <div class="review-actions">
-      <button class="btn btn-approve" onclick="Screens.reviewReg('${esc(req.request_id)}','approve')">✓ อนุมัติ</button>
-      <button class="btn btn-reject" onclick="Screens.reviewReg('${esc(req.request_id)}','reject')">✕ ปฏิเสธ</button>
+    <div class="input-group" style="margin-bottom:10px">
+      <label>หมายเหตุ Admin</label>
+      <textarea class="input-field" id="inp-rev-note" placeholder="ไม่บังคับ"></textarea>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-full" style="flex:1;background:var(--green);color:#fff" onclick="Screens.reviewReg('${esc(req.request_id)}','approve')">✅ Approve</button>
+      <button class="btn btn-full" style="flex:1;background:var(--red);color:#fff" onclick="Screens.reviewReg('${esc(req.request_id)}','reject')">❌ Reject</button>
     </div>
     ` : ''}`;
   } catch (err) {
@@ -745,12 +760,15 @@ function renderAudit() {
   <div class="screen screen-enter">
     <div class="header-bar">
       <button class="back-btn" onclick="App.go('admin')">←</button>
-      <div class="header-title">Audit Log</div>
-      <button class="btn btn-ghost btn-sm" onclick="Screens.exportAudit()">Export</button>
+      <div style="flex:1">
+        <div class="header-title">Audit Log</div>
+        <div class="header-sub">← Admin</div>
+      </div>
     </div>
-    <div class="filter-bar">
-      <select class="input-field" id="audit-type" onchange="Screens.loadAuditLog()">
-        <option value="">ทุกประเภท</option>
+    <div style="display:flex;gap:6px;padding:10px 16px;align-items:center">
+      <input type="text" class="input-field input-sm" id="audit-search" placeholder="🔍 Search..." style="flex:1" onkeyup="if(event.key==='Enter')Screens.loadAuditLog()">
+      <select class="input-field input-sm" id="audit-type" onchange="Screens.loadAuditLog()" style="width:auto;min-width:100px">
+        <option value="">All Actions</option>
         <option value="login">Login</option>
         <option value="logout">Logout</option>
         <option value="staff_select">Staff Select</option>
@@ -760,11 +778,10 @@ function renderAudit() {
         <option value="module_access">Module Access</option>
         <option value="config_change">Config</option>
         <option value="bridge_change">Bridge</option>
-        <option value="metadata_change">Metadata</option>
       </select>
-      <input type="text" class="input-field" id="audit-search" placeholder="ค้นหา..." onkeyup="if(event.key==='Enter')Screens.loadAuditLog()">
+      <button class="btn btn-outline btn-sm" onclick="Screens.exportAudit()">📥 Export</button>
     </div>
-    <div class="screen-body" id="audit-content">
+    <div class="screen-body" id="audit-content" style="padding-top:0">
       <div style="text-align:center;padding:30px;color:var(--tm)">กำลังโหลด...</div>
     </div>
   </div>`;

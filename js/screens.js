@@ -1,7 +1,8 @@
 /**
+ * Version 2.1 | 7 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
- * screens.js — All 12 Screen Renderers
+ * screens.js — Screen Renderers S1–S6
  * ═══════════════════════════════════════════
  * 
  * S1  Login
@@ -27,15 +28,15 @@ function renderLogin() {
   return `
   <div class="screen screen-enter">
     <div class="login-screen">
-    <div class="login-logo-text">🎨</div>
+      <div style="font-size:48px;margin-bottom:6px">🎨</div>
       <div class="login-logo-text">SPG</div>
       <div class="login-brand">SIAM PALETTE GROUP</div>
       <div class="login-sub">Management System</div>
 
       <form class="login-form" id="login-form" onsubmit="Screens.doLogin(event)">
         <div class="input-group">
-          <label>Email</label>
-          <input type="text" class="input-field" id="inp-user" placeholder="email@example.com" autocomplete="username" autofocus>
+          <label>Email / Username</label>
+          <input type="text" class="input-field" id="inp-user" placeholder="email@example.com หรือ username" autocomplete="username" autofocus>
         </div>
         <div class="input-group">
           <label>Password</label>
@@ -124,9 +125,9 @@ function renderStaffSelect() {
   <div class="screen screen-enter">
     <div class="header-bar">
       <button class="back-btn" onclick="API.clearSession();App.go('login')">←</button>
-      <div>
-        <div class="header-title">${esc(acc.display_label)}</div>
-        <div class="header-sub">Select your name</div>
+      <div style="flex:1">
+        <div class="header-title">เลือกบัญชี</div>
+        <div class="header-sub">${esc(acc.display_label)} · Select your name</div>
       </div>
     </div>
     <div class="screen-body">
@@ -148,18 +149,22 @@ async function loadStaffList() {
 
     let html = '';
     data.users.forEach(u => {
+      const initial = (u.display_name || '?').charAt(0).toUpperCase();
+      const emoji = u.avatar_emoji && u.avatar_emoji !== '👤' ? u.avatar_emoji : '';
       html += `
       <div class="staff-card" onclick="Screens.selectStaff('${esc(u.user_id)}')">
-        <div class="avatar">${esc(u.avatar_emoji || '👤')}</div>
+        <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--gold-bg2),#f9e8c0);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:${emoji ? '24px' : '18px'};font-weight:700;color:var(--gold);margin:0 auto 8px">${emoji || esc(initial)}</div>
         <div class="name">${esc(u.display_name)}</div>
+        ${acc.store_id ? `<div style="font-size:9px;color:var(--gold);font-weight:600;margin-top:2px">${esc(acc.store_id)}</div>` : ''}
+        ${acc.tier_id ? `<div style="font-size:8px;color:var(--tm);margin-top:2px">${esc(acc.tier_id)}</div>` : ''}
       </div>`;
     });
 
     // Add new staff card
     html += `
     <div class="staff-card add-new" onclick="App.go('new-staff')">
-      <div class="avatar">➕</div>
-      <div class="name" style="color:var(--tm)">Add Staff</div>
+      <div style="width:48px;height:48px;border-radius:50%;background:var(--s2);border:2px dashed var(--b2);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--tm);margin:0 auto 8px">➕</div>
+      <div class="name" style="color:var(--tm)">เพิ่มบัญชี</div>
     </div>`;
 
     grid.innerHTML = html;
@@ -309,19 +314,22 @@ function renderNewStaff() {
   <div class="screen screen-enter">
     <div class="header-bar">
       <button class="back-btn" onclick="App.go('staff-select')">←</button>
-      <div class="header-title">Add Staff</div>
+      <div class="header-title">เพิ่มบัญชีใหม่</div>
     </div>
     <div class="screen-body">
-      <form class="reg-form" onsubmit="Screens.doCreateStaff(event)">
+      <div style="padding:10px 14px;background:var(--blue-bg);border-radius:var(--radius-sm);font-size:12px;color:var(--blue);margin-bottom:14px">
+        สร้าง account ใหม่ภายใต้: <strong>${esc(acc.display_label)}</strong>
+      </div>
+      <form class="reg-form" style="padding:0" onsubmit="Screens.doCreateStaff(event)">
         <div class="input-group">
-          <label>Display Name</label>
-          <input type="text" class="input-field" id="inp-staff-nick" placeholder="e.g. Mint" required>
+          <label>Display Name *</label>
+          <input type="text" class="input-field" id="inp-staff-nick" placeholder="e.g. Junnie-GB" required>
         </div>
         <div class="input-group">
           <label>Full Name</label>
           <input type="text" class="input-field" id="inp-staff-full" placeholder="First Last" required>
         </div>
-          <div class="input-group">
+        <div class="input-group">
           <label>Phone</label>
           <input type="tel" class="input-field" id="inp-staff-phone" placeholder="0812345678" inputmode="tel">
         </div>
@@ -331,7 +339,7 @@ function renderNewStaff() {
                  placeholder="เช่น 123456" maxlength="6" inputmode="numeric" pattern="[0-9]{6}" required>
         </div>
         <div class="error-msg" id="staff-error"></div>
-        <button type="submit" class="btn btn-gold btn-full">เพิ่มชื่อ</button>
+        <button type="submit" class="btn btn-gold btn-full">สร้างบัญชี</button>
       </form>
     </div>
   </div>`;
@@ -369,32 +377,54 @@ function renderDashboard() {
   const s = API.getSession();
   if (!s) return renderLogin();
 
+  const tierLevel = parseInt((s.tier_id || 'T9').replace('T', ''));
+
   return `
   <div class="screen screen-enter">
-    <div class="dashboard-header">
-      <div class="dash-greeting">สวัสดี</div>
-      <div class="dash-name">${esc(s.display_name || s.display_label)}</div>
-      <div class="dash-info">
-        <span class="dash-badge badge-tier">${esc(s.tier_id)} — ${esc(s.tier_name)}</span>
-        ${s.store_id ? `<span class="dash-badge badge-store">${esc(s.store_id)}</span>` : ''}
-        ${s.dept_id ? `<span class="dash-badge badge-dept">${esc(s.dept_id)}</span>` : ''}
-      </div>
-    </div>
+    ${renderTopbar('Siam Palette Group', 'Home')}
 
     <div class="screen-body">
-      <div class="module-section-title">Modules</div>
-      <div class="module-grid" id="module-grid">
-        <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--tm)">กำลังโหลด...</div>
+      <!-- Greeting -->
+      <div class="dashboard-header">
+        <div class="dash-greeting">สวัสดี</div>
+        <div class="dash-name">${esc(s.display_name || s.display_label)}</div>
+        <div class="dash-info">
+          <span class="dash-badge badge-tier">${esc(s.tier_id)}${s.tier_name ? ' — ' + esc(s.tier_name) : ''}</span>
+          ${s.store_id ? `<span class="dash-badge badge-store">${esc(s.store_id)}</span>` : ''}
+          ${s.dept_id ? `<span class="dash-badge badge-dept">${esc(s.dept_id)}</span>` : ''}
+        </div>
       </div>
+
+      <!-- Bento Grid: Modules + Quick placeholder -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <!-- Modules Card -->
+        <div style="padding:14px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div class="module-section-title" style="padding:0 0 8px;margin:0">Modules</div>
+          <div id="module-grid">
+            <div style="text-align:center;padding:12px;color:var(--tm);font-size:12px">กำลังโหลด...</div>
+          </div>
+        </div>
+
+        <!-- Quick Actions placeholder (N6 — ทำทีหลัง) -->
+        <div style="padding:14px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div class="module-section-title" style="padding:0 0 8px;margin:0">Quick Actions</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px" id="quick-actions">
+            <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Daily Report</div>
+            <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Add Expense</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Zone (T1/T2) -->
       <div id="admin-zone"></div>
     </div>
 
     <div class="bottom-bar">
       <button class="nav-item active" onclick="App.go('dashboard')">
-        <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Home
+        <span class="nav-icon">🏠</span>Home
       </button>
       <button class="nav-item" onclick="App.go('profile')">
-        <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Profile
+        <span class="nav-icon">👤</span>Profile
       </button>
     </div>
   </div>`;
@@ -408,40 +438,49 @@ async function loadModules() {
     if (!grid) return;
 
     if (!data.modules || data.modules.length === 0) {
-      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-text">No modules available</div></div>`;
+      grid.innerHTML = `<div style="text-align:center;padding:16px;color:var(--tm);font-size:12px">No modules available</div>`;
       return;
     }
 
+    // Render modules as list (wireframe style)
     let html = '';
     data.modules.forEach(m => {
-      // D2: Hide modules with no_access permission
       if (!m.is_accessible && m.access_level === 'no_access') return;
 
-      const statusClass = m.status === 'active' ? 'status-active' : m.status === 'coming_soon' ? 'status-coming' : 'status-disabled';
-      const statusLabel = m.status === 'active' ? 'Active' : m.status === 'coming_soon' ? 'Coming Soon' : 'Disabled';
-      const disabled = !m.is_accessible ? 'disabled' : '';
+      const disabled = !m.is_accessible;
+      const statusDot = m.status === 'active' ? 'var(--green)' : 'var(--orange)';
 
-      html += `
-      <div class="module-card ${disabled}" ${m.is_accessible && m.app_url ? `onclick="Screens.launchModule('${esc(m.app_url)}')"` : ''}>
-        <span class="mod-status ${statusClass}">${statusLabel}</span>
-        <div class="mod-icon">${esc(m.icon)}</div>
-        <div class="mod-name">${esc(m.module_name)}</div>
-        <div class="mod-name-en">${esc(m.module_name_en)}</div>
-      </div>`;
+      if (disabled) {
+        html += `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;opacity:.4">
+          <span style="width:6px;height:6px;border-radius:50%;background:${statusDot};flex-shrink:0"></span>
+          <span style="font-size:12px;font-weight:500;flex:1;color:var(--tm)">${esc(m.icon)} ${esc(m.module_name)} — coming soon</span>
+        </div>`;
+      } else {
+        html += `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;cursor:pointer;transition:background .15s" onclick="Screens.launchModule('${esc(m.app_url)}')" onmouseover="this.style.background='var(--gold-bg)'" onmouseout="this.style.background='transparent'">
+          <span style="width:6px;height:6px;border-radius:50%;background:${statusDot};flex-shrink:0"></span>
+          <span style="font-size:12px;font-weight:600;flex:1">${esc(m.icon)} ${esc(m.module_name)}</span>
+        </div>`;
+      }
     });
-    grid.innerHTML = html || '<div class="empty-state" style="grid-column:1/-1"><div class="empty-text">No modules available</div></div>';
+    grid.innerHTML = html || '<div style="text-align:center;padding:16px;color:var(--tm);font-size:12px">No modules available</div>';
+
+    // Feed sidebar modules
+    App.updateSidebarModules(data.modules);
 
     // Show admin card for T1/T2
     if (adminZone && data.tier_level <= 2) {
       adminZone.innerHTML = `
-      <div style="padding:0 0 8px"><div class="module-section-title">Administration</div></div>
+      <div class="module-section-title">Administration</div>
       <div class="admin-card" onclick="App.go('admin')">
         <div style="display:flex;align-items:center;gap:10px">
-          <span class="admin-icon" style="font-size:20px;color:var(--gold)">⚙</span>
+          <span style="font-size:20px;color:var(--gold)">⚙️</span>
           <div>
             <div class="admin-label">Admin Panel</div>
             <div class="admin-sub">Accounts, Permissions, Registrations</div>
           </div>
+          <span style="margin-left:auto;color:var(--b3)">→</span>
         </div>
       </div>`;
     }
@@ -474,21 +513,22 @@ function renderProfile() {
       <div id="profile-content">
         <div style="text-align:center;padding:40px;color:var(--tm)">Loading...</div>
       </div>
-      <div id="profile-actions" style="padding:16px;display:flex;flex-direction:column;gap:8px">
+      <div id="profile-actions" style="display:flex;flex-direction:column;gap:6px;padding-top:8px">
+        <button class="btn btn-outline btn-full" onclick="Screens.toggleProfileEdit()">✏️ Edit Profile</button>
         ${s.account_type === 'group'
-          ? `<button class="btn btn-outline btn-full" onclick="Screens.showChangePin()">Change PIN</button>
-             <button class="btn btn-outline btn-full" onclick="Screens.switchUserFlow()">Switch User</button>`
-          : `<button class="btn btn-outline btn-full" onclick="Screens.showChangePassword()">Change Password</button>`
+          ? `<button class="btn btn-outline btn-full" onclick="Screens.showChangePin()">🔢 Change PIN</button>
+             <button class="btn btn-outline btn-full" onclick="Screens.switchUserFlow()">👥 Switch User</button>`
+          : `<button class="btn btn-outline btn-full" onclick="Screens.showChangePassword()">🔑 Change Password</button>`
         }
-        <button class="btn btn-danger btn-full" onclick="Screens.doLogout()">Logout</button>
+        <button class="btn btn-danger btn-full" onclick="Screens.doLogout()">🚪 ออกจากระบบ</button>
       </div>
     </div>
     <div class="bottom-bar">
       <button class="nav-item" onclick="App.go('dashboard')">
-        <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>Home
+        <span class="nav-icon">🏠</span>Home
       </button>
       <button class="nav-item active" onclick="App.go('profile')">
-        <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Profile
+        <span class="nav-icon">👤</span>Profile
       </button>
     </div>
   </div>`;
@@ -512,9 +552,11 @@ function renderProfileContent(data) {
   const el = $('profile-content');
   if (!el) return;
 
+  const initial = (data.display_name || data.full_name || '?').charAt(0).toUpperCase();
+
   el.innerHTML = `
   <div class="profile-avatar">
-    <div class="emoji">${esc(data.avatar_emoji || '👤')}</div>
+    <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--gold-bg2),#f9e8c0);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:var(--gold);margin:0 auto">${esc(initial)}</div>
     <div class="name">${esc(data.display_name || data.full_name)}</div>
     <div class="sub">${esc(data.username)}</div>
   </div>
@@ -524,8 +566,7 @@ function renderProfileContent(data) {
       <span class="label">Display Name</span>
       <span class="value" id="pf-nick-view">${esc(data.display_name)}</span>
     </div>
-    <div class="profile-row"><span class="label">Account</span><span class="value">${esc(data.account_id)} (${esc(data.account_type)})</span></div>
-    <div class="profile-row"><span class="label">Tier</span><span class="value">${esc(data.tier_id)} — ${esc(data.tier_name)}</span></div>
+    <div class="profile-row"><span class="label">Tier</span><span class="value"><span style="padding:2px 8px;border-radius:8px;background:var(--gold-bg2);color:var(--gold);font-size:11px;font-weight:600">${esc(data.tier_id)} — ${esc(data.tier_name)}</span></span></div>
     <div class="profile-row"><span class="label">Store</span><span class="value">${esc(data.store_name_th || data.store_id || '-')}</span></div>
     <div class="profile-row"><span class="label">Department</span><span class="value">${esc(data.dept_name_th || data.dept_id || '-')}</span></div>
     ${data.email ? `<div class="profile-row"><span class="label">Email</span><span class="value">${esc(data.email)}</span></div>` : ''}
@@ -534,13 +575,11 @@ function renderProfileContent(data) {
       <span class="value" id="pf-phone-view">${esc(data.phone || '-')}</span>
     </div>
   </div>
-  <div style="padding:8px 16px">
-    <button class="btn btn-outline btn-full" onclick="Screens.toggleProfileEdit()">Edit Profile</button>
-  </div>
   <div class="profile-section" style="margin-top:4px">
     <div class="profile-row"><span class="label">Session Expires</span><span class="value">${formatDate(data.session_expires_at)}</span></div>
     <div class="profile-row"><span class="label">User ID</span><span class="value" style="font-size:11px">${esc(data.user_id)}</span></div>
   </div>`;
+}
 }
 
 function toggleProfileEdit() {
@@ -748,6 +787,32 @@ async function doChangePin() {
 }
 
 // ════════════════════════════════
+// TOPBAR — ☰ + SPG Logo + Title + 🔔 + Avatar
+// (Used by S5, S6, S9, S10, S11, S12 — Phase 3+)
+// ════════════════════════════════
+function renderTopbar(title, subtitle) {
+  const s = API.getSession();
+  const initial = s ? (s.display_name || s.display_label || '?').charAt(0).toUpperCase() : '?';
+  return `
+    <div class="header-bar">
+      <button class="back-btn" onclick="App.openSidebar()" style="border:1px solid var(--b1)">
+        <div style="display:flex;flex-direction:column;gap:3px;width:14px">
+          <span style="display:block;height:1.5px;border-radius:1px;background:var(--t)"></span>
+          <span style="display:block;height:1.5px;border-radius:1px;background:var(--t)"></span>
+          <span style="display:block;height:1.5px;border-radius:1px;background:var(--t)"></span>
+        </div>
+      </button>
+      <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#d4990f,#a67208);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:9px;color:#fff;flex-shrink:0">SPG</div>
+      <div style="flex:1;min-width:0">
+        <div class="header-title">${esc(title || 'Siam Palette Group')}</div>
+        ${subtitle ? '<div class="header-sub">' + esc(subtitle) + '</div>' : ''}
+      </div>
+      <button class="back-btn" style="border:1px solid var(--b1);position:relative;font-size:14px;color:var(--tm)">🔔<span id="notiBadge" style="position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--red);border:1.5px solid #fff;display:none"></span></button>
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--gold-bg2),#f9e8c0);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--gold);cursor:pointer;flex-shrink:0" onclick="App.go('profile')">${esc(initial)}</div>
+    </div>`;
+}
+
+// ════════════════════════════════
 // HELPERS (used by all screens)
 // ════════════════════════════════
 function $(id) { return document.getElementById(id); }
@@ -793,6 +858,7 @@ function formatShortDate(iso) {
 // ════════════════════════════════
 return {
   $, esc, showFieldError, hideError, formatDate, formatShortDate,
+  renderTopbar,
   renderLogin, doLogin, saveApiUrl, showApiConfig,
   renderStaffSelect, loadStaffList, selectStaff, showPinPopup, submitPin, showSetPinPopup, submitSetPin,
   renderNewStaff, doCreateStaff,

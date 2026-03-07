@@ -1,8 +1,8 @@
 /**
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
- * app.js — Router + Screen Manager + Utilities
- * v3.2 — Hash Routing with Sub-routes
+ * app.js — Router + Screen Manager + Sidebar + Utilities
+ * Version 3.3 | 7 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * 
  * Route Map:
@@ -108,6 +108,9 @@ const App = (() => {
     // Update URL hash
     const hash = buildHash(route, params);
     history.replaceState({ route, params }, '', hash);
+
+    // Update sidebar active state
+    updateSidebarActive(route, params);
   }
 
   // ─── UPDATE HASH ONLY (no re-render, for tab switches) ───
@@ -146,9 +149,151 @@ const App = (() => {
     if (el) el.classList.add('hidden');
   }
 
+  // ═══════════════════════════════════════════
+  // SIDEBAR — Slide-out left panel
+  // ═══════════════════════════════════════════
+
+  function esc(str) {
+    if (str === null || str === undefined) return '';
+    const d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
+  }
+
+  function initSidebar() {
+    const s = API.getSession();
+    if (!s) {
+      // Guest mode — empty sidebar
+      document.getElementById('sidebarHeader').innerHTML = '';
+      document.getElementById('sidebarBody').innerHTML = '';
+      document.getElementById('sidebarFooter').innerHTML = '';
+      return;
+    }
+
+    const initial = (s.display_name || s.display_label || '?').charAt(0).toUpperCase();
+    const tierLevel = parseInt((s.tier_id || 'T9').replace('T', ''));
+    const isAdmin = tierLevel <= 2;
+    const isManager = tierLevel <= 4;
+
+    // Header: profile info
+    document.getElementById('sidebarHeader').innerHTML = `
+      <div class="sidebar-profile">
+        <div class="sidebar-avatar">${esc(initial)}</div>
+        <div>
+          <div class="sidebar-name">${esc(s.display_name || s.display_label)}</div>
+          <div class="sidebar-meta">${esc(s.tier_id)} · ${esc(s.store_id || 'HQ')}</div>
+        </div>
+      </div>`;
+
+    // Body: navigation sections
+    let body = '';
+
+    // Modules section
+    body += `
+      <details class="sidebar-section" open>
+        <summary>Modules</summary>
+        <div id="sidebarModules">
+          <div class="sidebar-item" style="color:var(--tm);font-size:11px">กำลังโหลด...</div>
+        </div>
+      </details>
+      <div class="sidebar-divider"></div>`;
+
+    // Management section (T1-T4)
+    if (isManager) {
+      body += `
+        <details class="sidebar-section"${isAdmin ? ' open' : ''}>
+          <summary>Management</summary>
+          <div>
+            ${isAdmin ? '<div class="sidebar-item" onclick="App.goSidebar(\'admin\')">Admin Panel</div>' : ''}
+          </div>
+        </details>
+        <div class="sidebar-divider"></div>`;
+    }
+
+    // Admin sections (T1-T2 only)
+    if (isAdmin) {
+      body += `
+        <details class="sidebar-section">
+          <summary>Admin</summary>
+          <div>
+            <div class="sidebar-item" onclick="App.goSidebar('admin',{tab:'accounts'})">Accounts</div>
+            <div class="sidebar-item" onclick="App.goSidebar('admin',{tab:'permissions'})">Permissions</div>
+            <div class="sidebar-item" onclick="App.goSidebar('admin',{tab:'tieraccess'})">Tier Access</div>
+            <div class="sidebar-item" onclick="App.goSidebar('admin',{tab:'registrations'})">Requests</div>
+          </div>
+        </details>
+        <div class="sidebar-divider"></div>
+        <details class="sidebar-section">
+          <summary>Master Data</summary>
+          <div>
+            <div class="sidebar-item" onclick="App.goSidebar('admin',{tab:'bridge'})">Bridge Config</div>
+            <div class="sidebar-item" onclick="App.goSidebar('admin',{tab:'modules'})">Modules</div>
+            <div class="sidebar-item" onclick="App.goSidebar('admin',{tab:'user'})">Users</div>
+            <div class="sidebar-item" onclick="App.goSidebar('admin',{tab:'store'})">Stores</div>
+            <div class="sidebar-item" onclick="App.goSidebar('admin',{tab:'dept'})">Departments</div>
+          </div>
+        </details>
+        <div class="sidebar-divider"></div>
+        <details class="sidebar-section">
+          <summary>Reports</summary>
+          <div>
+            <div class="sidebar-item" onclick="App.goSidebar('audit')">Audit Trail</div>
+          </div>
+        </details>`;
+    }
+
+    document.getElementById('sidebarBody').innerHTML = body;
+
+    // Footer: Home + Logout
+    document.getElementById('sidebarFooter').innerHTML = `
+      <div class="sidebar-footer-item" onclick="App.goSidebar('dashboard')">🏠 Home</div>
+      <div class="sidebar-footer-item danger" onclick="Screens.doLogout()">🚪 ออกจากระบบ</div>`;
+  }
+
+  // Populate module list in sidebar (called after loadModules)
+  function updateSidebarModules(modules) {
+    const el = document.getElementById('sidebarModules');
+    if (!el || !modules) return;
+
+    el.innerHTML = modules
+      .filter(m => m.is_accessible || m.status === 'coming_soon')
+      .map(m => {
+        const disabled = !m.is_accessible;
+        const badge = m.badge_count ? `<span class="sidebar-badge">${m.badge_count}</span>` : '';
+        if (disabled) {
+          return `<div class="sidebar-item" style="opacity:.4;cursor:default">${esc(m.icon)} ${esc(m.module_name)} <span style="font-size:8px;padding:1px 5px;border-radius:4px;background:var(--orange-bg);color:var(--orange);margin-left:auto">Soon</span></div>`;
+        }
+        return `<div class="sidebar-item" onclick="Screens.launchModule('${esc(m.app_url)}')">${esc(m.icon)} ${esc(m.module_name)} ${badge}</div>`;
+      }).join('');
+  }
+
+  function openSidebar() {
+    document.getElementById('sidebarOverlay')?.classList.add('open');
+    document.getElementById('sidebarPanel')?.classList.add('open');
+  }
+
+  function closeSidebar() {
+    document.getElementById('sidebarOverlay')?.classList.remove('open');
+    document.getElementById('sidebarPanel')?.classList.remove('open');
+  }
+
+  function goSidebar(route, params) {
+    closeSidebar();
+    go(route, params || {});
+  }
+
+  function updateSidebarActive(route, params) {
+    // Mark active sidebar item based on current route
+    document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+    // Simple matching — will enhance in Phase 2-4
+  }
+
   // ─── INIT ───
   function init() {
     const session = API.getSession();
+
+    // Build sidebar for current session state
+    initSidebar();
 
     // Try to restore route from current hash
     const { route, params } = parseHash(location.hash);
@@ -182,5 +327,10 @@ const App = (() => {
     init();
   }
 
-  return { go, updateHash, toast, showLoader, hideLoader };
+  return {
+    go, updateHash, toast, showLoader, hideLoader,
+    // Sidebar
+    openSidebar, closeSidebar, goSidebar,
+    initSidebar, updateSidebarModules,
+  };
 })();

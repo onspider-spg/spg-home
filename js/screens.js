@@ -1,5 +1,5 @@
 /**
- * Version 2.1 | 7 MAR 2026 | Siam Palette Group
+ * Version 2.1.1 | 7 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens.js — Screen Renderers S1–S6
@@ -579,7 +579,6 @@ function renderProfileContent(data) {
     <div class="profile-row"><span class="label">Session Expires</span><span class="value">${formatDate(data.session_expires_at)}</span></div>
     <div class="profile-row"><span class="label">User ID</span><span class="value" style="font-size:11px">${esc(data.user_id)}</span></div>
   </div>`;
-}
 }
 
 function toggleProfileEdit() {

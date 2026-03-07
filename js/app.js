@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * app.js — Router + Screen Manager + Sidebar + Utilities
- * Version 3.3 | 7 MAR 2026 | Siam Palette Group
+ * Version 3.3.1 | 7 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * 
  * Route Map:
@@ -244,6 +244,12 @@ const App = (() => {
 
     document.getElementById('sidebarBody').innerHTML = body;
 
+    // Populate modules from cache (if loadModules already ran before sidebar opened)
+    if (_cachedModules) {
+      const modEl = document.getElementById('sidebarModules');
+      if (modEl) _renderSidebarModuleList(modEl, _cachedModules);
+    }
+
     // Footer: Home + Logout
     document.getElementById('sidebarFooter').innerHTML = `
       <div class="sidebar-footer-item" onclick="App.goSidebar('dashboard')">🏠 Home</div>
@@ -251,10 +257,16 @@ const App = (() => {
   }
 
   // Populate module list in sidebar (called after loadModules)
+  let _cachedModules = null;
   function updateSidebarModules(modules) {
+    _cachedModules = modules;
+    // If sidebar already built, update now; otherwise will populate on open
     const el = document.getElementById('sidebarModules');
     if (!el || !modules) return;
+    _renderSidebarModuleList(el, modules);
+  }
 
+  function _renderSidebarModuleList(el, modules) {
     el.innerHTML = modules
       .filter(m => m.is_accessible || m.status === 'coming_soon')
       .map(m => {
@@ -267,7 +279,10 @@ const App = (() => {
       }).join('');
   }
 
+  let _sidebarBuilt = false;
+
   function openSidebar() {
+    if (!_sidebarBuilt) { initSidebar(); _sidebarBuilt = true; }
     document.getElementById('sidebarOverlay')?.classList.add('open');
     document.getElementById('sidebarPanel')?.classList.add('open');
   }
@@ -292,8 +307,7 @@ const App = (() => {
   function init() {
     const session = API.getSession();
 
-    // Build sidebar for current session state
-    initSidebar();
+    // Sidebar is lazy — built on first openSidebar() call, not here
 
     // Try to restore route from current hash
     const { route, params } = parseHash(location.hash);

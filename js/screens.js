@@ -1,5 +1,5 @@
 /**
- * Version 2.1.1 | 7 MAR 2026 | Siam Palette Group
+ * Version 2.2 | 7 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens.js — Screen Renderers S1–S6
@@ -583,39 +583,44 @@ function renderProfileContent(data) {
 
 function toggleProfileEdit() {
   if (!_profileData) return;
-  const el = $('profile-content');
-  if (!el) return;
-
-  el.innerHTML = `
-  <div class="profile-avatar">
-    <div class="emoji">${esc(_profileData.avatar_emoji || '👤')}</div>
-    <div class="name">${esc(_profileData.display_name || _profileData.full_name)}</div>
-    <div class="sub">${esc(_profileData.username)}</div>
-  </div>
-  <div class="profile-section">
-    <div class="profile-row"><span class="label">Full Name</span><span class="value">${esc(_profileData.full_name)}</span></div>
-    <div class="profile-row" style="flex-direction:column;align-items:stretch">
-      <span class="label">Display Name</span>
-      <input type="text" class="input-field input-sm" id="pf-edit-nick" value="${esc(_profileData.display_name || '')}">
+  const initial = (_profileData.display_name || _profileData.full_name || '?').charAt(0).toUpperCase();
+  const html = `
+  <div class="modal-overlay" id="edit-profile-modal" onclick="if(event.target===this)this.remove()">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-close" onclick="document.getElementById('edit-profile-modal').remove()">✕</div>
+      <div class="modal-title">✏️ Edit Profile</div>
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--gold-bg2),#f9e8c0);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--gold);margin:0 auto">${esc(initial)}</div>
+      </div>
+      <div class="input-group" style="margin-bottom:10px">
+        <label>Display Name *</label>
+        <input type="text" class="input-field" id="pf-edit-nick" value="${esc(_profileData.display_name || '')}">
+      </div>
+      <div class="input-group" style="margin-bottom:10px">
+        <label>Full Name</label>
+        <input type="text" class="input-field" id="pf-edit-full" value="${esc(_profileData.full_name || '')}" readonly style="opacity:.6">
+      </div>
+      <div class="input-group" style="margin-bottom:10px">
+        <label>Phone</label>
+        <input type="tel" class="input-field" id="pf-edit-phone" value="${esc(_profileData.phone || '')}" inputmode="tel">
+      </div>
+      ${_profileData.email ? `<div class="input-group" style="margin-bottom:10px">
+        <label>Email <span style="color:var(--tm)">(read-only)</span></label>
+        <input type="text" class="input-field" value="${esc(_profileData.email)}" readonly style="opacity:.6">
+      </div>` : ''}
+      <div class="error-msg" id="pf-edit-error"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('edit-profile-modal').remove()">ยกเลิก</button>
+        <button class="btn btn-gold" style="flex:1" onclick="Screens.saveProfileEdit()">💾 บันทึก</button>
+      </div>
     </div>
-    <div class="profile-row"><span class="label">Account</span><span class="value">${esc(_profileData.account_id)} (${esc(_profileData.account_type)})</span></div>
-    <div class="profile-row"><span class="label">Tier</span><span class="value">${esc(_profileData.tier_id)} — ${esc(_profileData.tier_name)}</span></div>
-    <div class="profile-row"><span class="label">Store</span><span class="value">${esc(_profileData.store_name_th || _profileData.store_id || '-')}</span></div>
-    <div class="profile-row"><span class="label">Department</span><span class="value">${esc(_profileData.dept_name_th || _profileData.dept_id || '-')}</span></div>
-    ${_profileData.email ? `<div class="profile-row"><span class="label">Email</span><span class="value">${esc(_profileData.email)}</span></div>` : ''}
-    <div class="profile-row" style="flex-direction:column;align-items:stretch">
-      <span class="label">Phone</span>
-      <input type="tel" class="input-field input-sm" id="pf-edit-phone" value="${esc(_profileData.phone || '')}" inputmode="tel">
-    </div>
-  </div>
-  <div class="error-msg" id="pf-edit-error"></div>
-  <div style="padding:8px 16px;display:flex;gap:8px">
-    <button class="btn btn-gold" style="flex:1" onclick="Screens.saveProfileEdit()">Save</button>
-    <button class="btn btn-outline" style="flex:1" onclick="Screens.cancelProfileEdit()">Cancel</button>
   </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
 }
 
 function cancelProfileEdit() {
+  document.getElementById('edit-profile-modal')?.remove();
   if (_profileData) renderProfileContent(_profileData);
 }
 
@@ -631,9 +636,9 @@ async function saveProfileEdit() {
   App.showLoader();
   try {
     await API.updateProfile({ display_name, phone });
+    document.getElementById('edit-profile-modal')?.remove();
     App.hideLoader();
     App.toast('Profile updated', 'success');
-    // Reload fresh data
     await loadProfile();
   } catch (err) {
     App.hideLoader();

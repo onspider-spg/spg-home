@@ -1,5 +1,5 @@
 /**
- * Version 2.1 | 7 MAR 2026 | Siam Palette Group
+ * Version 2.2 | 7 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens2.js — Screens S7–S12
@@ -235,32 +235,41 @@ function renderAccountList(container) {
     return 0;
   });
 
+  const tierColor = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold)' : l<=4 ? 'var(--blue)' : 'var(--tm)'; };
+  const tierBg = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold-bg2)' : l<=4 ? 'var(--blue-bg)' : 'var(--s2)'; };
+
   let html = `<div class="admin-toolbar">
-    <input type="text" class="input-field input-sm" id="acc-search" placeholder="Search..." value="${esc(q)}" oninput="Screens.filterAccounts()">
+    <input type="text" class="input-field input-sm" id="acc-search" placeholder="🔍 Search accounts..." value="${esc(q)}" oninput="Screens.filterAccounts()">
     <select class="input-field input-sm" id="acc-sort" onchange="Screens.filterAccounts()">
-      <option value="name" ${sortBy==='name'?'selected':''}>Name</option>
-      <option value="tier" ${sortBy==='tier'?'selected':''}>Tier</option>
-      <option value="status" ${sortBy==='status'?'selected':''}>Status</option>
-      <option value="created" ${sortBy==='created'?'selected':''}>Newest</option>
+      <option value="name" ${sortBy==='name'?'selected':''}>Sort: Name</option>
+      <option value="tier" ${sortBy==='tier'?'selected':''}>Sort: Tier</option>
+      <option value="status" ${sortBy==='status'?'selected':''}>Sort: Status</option>
+      <option value="created" ${sortBy==='created'?'selected':''}>Sort: Newest</option>
     </select>
     <button class="btn btn-gold btn-sm" onclick="Screens.showCreateAccount()">+ New</button>
-  </div>`;
+  </div>
+  <div style="font-size:11px;color:var(--tm);padding:0 16px 6px">${filtered.length} accounts</div>`;
 
   if (filtered.length === 0) {
     html += '<div class="empty-state"><div class="empty-text">No accounts match</div></div>';
   } else {
+    html += `<div class="perm-table-wrap"><table class="perm-table" style="font-size:12px">
+      <thead><tr><th style="text-align:left">Name</th><th style="text-align:left">Email</th><th>Tier</th><th>Store</th><th>Dept</th><th>Status</th><th></th></tr></thead><tbody>`;
     filtered.forEach(acc => {
       const badge = acc.status === 'approved' ? 'badge-approved' : acc.status === 'pending' ? 'badge-pending' : 'badge-suspended';
+      const rowOpacity = acc.status === 'suspended' ? 'opacity:.5;' : '';
       html += `
-      <div class="list-item" onclick="App.go('account-detail',{account_id:'${esc(acc.account_id)}'})">
-        <div class="item-info" style="flex:1">
-          <div class="item-name">${esc(acc.display_label || acc.username)}</div>
-          <div class="item-meta">${esc(acc.account_id)} · ${esc(acc.tier_id)} · ${esc(acc.account_type)} · ${acc.user_count} users</div>
-        </div>
-        <span class="item-badge ${badge}">${esc(acc.status)}</span>
-      </div>`;
+      <tr style="cursor:pointer;${rowOpacity}" onclick="App.go('account-detail',{account_id:'${esc(acc.account_id)}'})">
+        <td style="font-weight:600">${esc(acc.display_label || acc.username)}</td>
+        <td style="font-size:10px;color:var(--td)">${esc(acc.username)}</td>
+        <td style="text-align:center"><span style="padding:2px 8px;border-radius:8px;background:${tierBg(acc.tier_id)};color:${tierColor(acc.tier_id)};font-size:10px;font-weight:600">${esc(acc.tier_id)}</span></td>
+        <td style="text-align:center">${esc(acc.store_id || '-')}</td>
+        <td style="text-align:center">${esc(acc.dept_id || '-')}</td>
+        <td style="text-align:center"><span class="item-badge ${badge}" style="margin:0">${esc(acc.status)}</span></td>
+        <td style="color:var(--blue);font-size:10px;text-align:center">→</td>
+      </tr>`;
     });
-    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${filtered.length} of ${_allAccounts.length} accounts</div>`;
+    html += `</tbody></table></div>`;
   }
   container.innerHTML = html;
 }
@@ -402,6 +411,10 @@ function renderRegList(container) {
   const q = $('reg-search')?.value?.toLowerCase() || '';
   const statusFilter = $('reg-status')?.value || 'all';
 
+  const pendingCount = _allRegs.filter(r => r.status === 'pending').length;
+  const approvedCount = _allRegs.filter(r => r.status === 'approved').length;
+  const rejectedCount = _allRegs.filter(r => r.status === 'rejected').length;
+
   let filtered = _allRegs.filter(r => {
     if (statusFilter !== 'all' && r.status !== statusFilter) return false;
     if (!q) return true;
@@ -410,31 +423,34 @@ function renderRegList(container) {
       || (r.requested_store_id || '').toLowerCase().includes(q);
   });
 
-  let html = `<div class="admin-toolbar">
-    <input type="text" class="input-field input-sm" id="reg-search" placeholder="Search..." value="${esc(q)}" oninput="Screens.filterRegs()">
-    <select class="input-field input-sm" id="reg-status" onchange="Screens.filterRegs()">
-      <option value="all" ${statusFilter==='all'?'selected':''}>All</option>
-      <option value="pending" ${statusFilter==='pending'?'selected':''}>Pending</option>
-      <option value="approved" ${statusFilter==='approved'?'selected':''}>Approved</option>
-      <option value="rejected" ${statusFilter==='rejected'?'selected':''}>Rejected</option>
-    </select>
-  </div>`;
+  const chipActive = (v) => statusFilter === v ? 'background:var(--gold-bg2);color:var(--gold);border-color:rgba(212,150,10,0.2);font-weight:600' : '';
+
+  let html = `<div style="display:flex;gap:4px;padding:0 0 10px;flex-wrap:wrap">
+    <span style="padding:4px 10px;border-radius:12px;border:1px solid var(--b1);font-size:11px;cursor:pointer;${chipActive('all')}" onclick="$('reg-status').value='all';Screens.filterRegs()">All</span>
+    <span style="padding:4px 10px;border-radius:12px;border:1px solid var(--b1);font-size:11px;cursor:pointer;${chipActive('pending')}" onclick="$('reg-status').value='pending';Screens.filterRegs()">Pending (${pendingCount})</span>
+    <span style="padding:4px 10px;border-radius:12px;border:1px solid var(--b1);font-size:11px;cursor:pointer;${chipActive('approved')}" onclick="$('reg-status').value='approved';Screens.filterRegs()">Approved</span>
+    <span style="padding:4px 10px;border-radius:12px;border:1px solid var(--b1);font-size:11px;cursor:pointer;${chipActive('rejected')}" onclick="$('reg-status').value='rejected';Screens.filterRegs()">Rejected</span>
+  </div>
+  <select id="reg-status" style="display:none"><option value="${esc(statusFilter)}"></option></select>
+  <input type="hidden" id="reg-search" value="${esc(q)}">`;
 
   if (filtered.length === 0) {
     html += '<div class="empty-state"><div class="empty-text">No requests match</div></div>';
   } else {
     filtered.forEach(r => {
-      const badge = r.status === 'pending' ? 'badge-pending' : r.status === 'approved' ? 'badge-approved' : 'badge-rejected';
+      const borderColor = r.status === 'pending' ? 'var(--orange)' : r.status === 'approved' ? 'var(--green)' : 'var(--red)';
+      const badge = r.status === 'pending' ? 'badge-pending' : r.status === 'approved' ? 'badge-approved' : 'badge-suspended';
       html += `
-      <div class="list-item" onclick="App.go('reg-review',{request_id:'${esc(r.request_id)}'})">
-        <div class="item-info" style="flex:1">
-          <div class="item-name">${esc(r.display_name)} (${esc(r.username)})</div>
-          <div class="item-meta">${esc(r.requested_store_id || '-')} · ${esc(r.requested_dept_id || '-')} · ${formatShortDate(r.submitted_at)}</div>
+      <div style="padding:12px 14px;border:1px solid var(--b1);border-left:4px solid ${borderColor};border-radius:0 var(--radius-sm) var(--radius-sm) 0;margin-bottom:6px;cursor:pointer" onclick="App.go('reg-review',{request_id:'${esc(r.request_id)}'})">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-size:13px;font-weight:700">${esc(r.display_name)}</span>
+          <span class="item-badge ${badge}" style="margin:0">${esc(r.status)}</span>
         </div>
-        <span class="item-badge ${badge}">${esc(r.status)}</span>
+        <div style="font-size:11px;color:var(--td)">${esc(r.username)} · ${esc(r.requested_store_id || '-')} · ${esc(r.requested_dept_id || '-')} · ${formatShortDate(r.submitted_at)}</div>
+        ${r.note ? `<div style="font-size:10px;color:var(--tm);margin-top:3px">Note: ${esc(r.note)}</div>` : ''}
+        ${r.status === 'pending' ? `<button class="btn btn-outline btn-sm" style="margin-top:6px;padding:3px 10px;font-size:10px" onclick="event.stopPropagation();App.go('reg-review',{request_id:'${esc(r.request_id)}'})">👁️ Review</button>` : ''}
       </div>`;
     });
-    html += `<div style="text-align:center;padding:12px;font-size:11px;color:var(--tm)">${filtered.length} of ${_allRegs.length} requests</div>`;
   }
   container.innerHTML = html;
 }

@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * app.js — Router + Screen Manager + Sidebar + Utilities
- * Version 3.3.1 | 7 MAR 2026 | Siam Palette Group
+ * Version 3.4.1 | 7 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * 
  * Route Map:
@@ -252,8 +252,8 @@ const App = (() => {
 
     // Footer: Home + Logout
     document.getElementById('sidebarFooter').innerHTML = `
-      <div class="sidebar-footer-item" onclick="App.goSidebar('dashboard')">🏠 Home</div>
-      <div class="sidebar-footer-item danger" onclick="Screens.doLogout()">🚪 ออกจากระบบ</div>`;
+      <div class="sidebar-footer-item" onclick="App.goSidebar('dashboard')">Home</div>
+      <div class="sidebar-footer-item danger" onclick="Screens.doLogout()">Log out</div>`;
   }
 
   // Populate module list in sidebar (called after loadModules)
@@ -272,10 +272,12 @@ const App = (() => {
       .map(m => {
         const disabled = !m.is_accessible;
         const badge = m.badge_count ? `<span class="sidebar-badge">${m.badge_count}</span>` : '';
+        const label = m.module_name_en || m.module_name || m.module_id;
+        const sub = m.module_name && m.module_name_en ? ` <span style="font-size:9px;color:var(--tm)">· ${esc(m.module_name)}</span>` : '';
         if (disabled) {
-          return `<div class="sidebar-item" style="opacity:.4;cursor:default">${esc(m.icon)} ${esc(m.module_name)} <span style="font-size:8px;padding:1px 5px;border-radius:4px;background:var(--orange-bg);color:var(--orange);margin-left:auto">Soon</span></div>`;
+          return `<div class="sidebar-item" style="opacity:.4;cursor:default">${esc(label)}${sub} <span style="font-size:8px;padding:1px 5px;border-radius:4px;background:var(--orange-bg);color:var(--orange);margin-left:auto">Soon</span></div>`;
         }
-        return `<div class="sidebar-item" onclick="Screens.launchModule('${esc(m.app_url)}')">${esc(m.icon)} ${esc(m.module_name)} ${badge}</div>`;
+        return `<div class="sidebar-item" onclick="Screens.launchModule('${esc(m.app_url)}')">${esc(label)}${sub} ${badge}</div>`;
       }).join('');
   }
 
@@ -306,6 +308,17 @@ const App = (() => {
   // ─── INIT ───
   function init() {
     const session = API.getSession();
+
+    // #logout — cross-module logout link
+    // Usage: location.href = 'https://onspider-spg.github.io/spg-home/#logout'
+    if (location.hash === '#logout') {
+      API.clearSession();
+      localStorage.removeItem('spg_token');
+      _sidebarBuilt = false;
+      history.replaceState(null, '', '#login');
+      go('login');
+      return;
+    }
 
     // Sidebar is lazy — built on first openSidebar() call, not here
 

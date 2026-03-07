@@ -1,5 +1,5 @@
 /**
- * Version 2.2 | 7 MAR 2026 | Siam Palette Group
+ * Version 2.3.1 | 7 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens.js — Screen Renderers S1–S6
@@ -379,12 +379,117 @@ function renderDashboard() {
 
   const tierLevel = parseInt((s.tier_id || 'T9').replace('T', ''));
 
+  // KPI section by tier
+  let kpiHtml = '';
+  if (tierLevel <= 2) {
+    // T1-T2: Owner — Total Sales, Labour%, Pending
+    kpiHtml = `
+      <div style="display:grid;grid-template-columns:3fr 1.5fr 1.5fr;gap:10px;margin-bottom:12px">
+        <div style="padding:16px;background:var(--bg);border:1.5px solid var(--b1);border-left:4px solid var(--gold);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--td)">● Total Sales Today</div>
+          <div style="font-size:28px;font-weight:800;color:var(--green);margin:4px 0" id="kpi-sales">—</div>
+          <div style="font-size:10px;color:var(--tm)" id="kpi-sales-sub">Loading...</div>
+        </div>
+        <div style="padding:16px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--td)">Labour</div>
+          <div style="font-size:22px;font-weight:800;color:var(--green);margin:4px 0" id="kpi-labour">—</div>
+          <div style="font-size:10px;color:var(--tm)" id="kpi-labour-sub"></div>
+        </div>
+        <div style="padding:16px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--td)">Pending</div>
+          <div style="font-size:22px;font-weight:800;color:var(--orange);margin:4px 0" id="kpi-pending">—</div>
+          <div style="font-size:10px;color:var(--tm)" id="kpi-pending-sub"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="padding:14px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div class="module-section-title" style="padding:0 0 8px;margin:0">Needs Attention</div>
+          <div id="dash-attention" style="font-size:12px;color:var(--tm)">Loading...</div>
+        </div>
+        <div style="padding:14px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div class="module-section-title" style="padding:0 0 8px;margin:0">Store Health</div>
+          <div id="dash-health" style="font-size:12px;color:var(--tm)">Loading...</div>
+        </div>
+      </div>`;
+  } else if (tierLevel <= 4) {
+    // T3-T4: Manager — My Store Sales, Staff on Shift, Daily Report
+    kpiHtml = `
+      <div style="display:grid;grid-template-columns:3fr 1.5fr 1.5fr;gap:10px;margin-bottom:12px">
+        <div style="padding:16px;background:var(--bg);border:1.5px solid var(--b1);border-left:4px solid var(--gold);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--td)">● My Store Sales</div>
+          <div style="font-size:28px;font-weight:800;color:var(--green);margin:4px 0" id="kpi-sales">—</div>
+          <div style="font-size:10px;color:var(--tm)" id="kpi-sales-sub">${esc(s.store_id || '')}</div>
+        </div>
+        <div style="padding:16px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--td)">Staff on Shift</div>
+          <div style="font-size:22px;font-weight:800;color:var(--t);margin:4px 0" id="kpi-staff">—</div>
+          <div style="font-size:10px;color:var(--tm)" id="kpi-staff-sub"></div>
+        </div>
+        <div style="padding:16px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--td)">Daily Report</div>
+          <div style="font-size:14px;font-weight:700;color:var(--red);margin:4px 0" id="kpi-report">—</div>
+          <div style="font-size:10px;color:var(--tm)" id="kpi-report-sub"></div>
+        </div>
+      </div>
+      <div style="padding:14px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px">
+        <div class="module-section-title" style="padding:0 0 8px;margin:0">Needs Attention</div>
+        <div id="dash-attention" style="font-size:12px;color:var(--tm)">No issues</div>
+      </div>`;
+  } else {
+    // T5-T7: Staff — Shift, Tasks, BC Order
+    kpiHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="padding:16px;background:var(--bg);border:1.5px solid var(--b1);border-left:4px solid var(--blue);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--td)">Shift Today</div>
+          <div style="font-size:18px;font-weight:800;color:var(--t);margin:4px 0" id="kpi-shift">—</div>
+          <div style="font-size:10px;color:var(--tm)" id="kpi-shift-sub">${esc(s.store_id || '')} · ${esc(s.dept_id || '')}</div>
+        </div>
+        <div style="padding:16px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--td)">Tasks Today</div>
+          <div style="font-size:22px;font-weight:800;color:var(--purple);margin:4px 0" id="kpi-tasks">—</div>
+          <div style="font-size:10px;color:var(--tm)" id="kpi-tasks-sub"></div>
+        </div>
+        <div style="padding:16px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--td)">BC Order Prep</div>
+          <div style="font-size:22px;font-weight:800;color:var(--orange);margin:4px 0" id="kpi-bc">—</div>
+          <div style="font-size:10px;color:var(--tm)" id="kpi-bc-sub"></div>
+        </div>
+      </div>
+      <div style="padding:14px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:12px">
+        <div class="module-section-title" style="padding:0 0 8px;margin:0">To Do</div>
+        <div id="dash-todo" style="font-size:12px;color:var(--tm)">No tasks</div>
+      </div>`;
+  }
+
+  // Quick Actions by tier
+  let quickHtml = '';
+  if (tierLevel <= 2) {
+    quickHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
+        <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Daily Report</div>
+        <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Add Expense</div>
+        <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Review Payroll</div>
+        <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">View P&L</div>
+        <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Supplier Invoice</div>
+        <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Report Issue</div>
+      </div>`;
+  } else if (tierLevel <= 4) {
+    quickHtml = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+        <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Submit Daily Report</div>
+        <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">BC Order</div>
+        <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Report Issue</div>
+        <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Upload Receipt</div>
+      </div>`;
+  } else {
+    quickHtml = '';
+  }
+
   return `
   <div class="screen screen-enter">
     ${renderTopbar('Siam Palette Group', 'Home')}
 
     <div class="screen-body">
-      <!-- Greeting -->
       <div class="dashboard-header">
         <div class="dash-greeting">สวัสดี</div>
         <div class="dash-name">${esc(s.display_name || s.display_label)}</div>
@@ -395,37 +500,32 @@ function renderDashboard() {
         </div>
       </div>
 
-      <!-- Bento Grid: Modules + Quick placeholder -->
+      ${kpiHtml}
+
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <!-- Modules Card -->
         <div style="padding:14px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
           <div class="module-section-title" style="padding:0 0 8px;margin:0">Modules</div>
           <div id="module-grid">
-            <div style="text-align:center;padding:12px;color:var(--tm);font-size:12px">กำลังโหลด...</div>
+            <div style="text-align:center;padding:12px;color:var(--tm);font-size:12px">Loading...</div>
           </div>
         </div>
-
-        <!-- Quick Actions placeholder (N6 — ทำทีหลัง) -->
+        ${quickHtml ? `
         <div style="padding:14px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
           <div class="module-section-title" style="padding:0 0 8px;margin:0">Quick Actions</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px" id="quick-actions">
-            <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Daily Report</div>
-            <div style="padding:8px;background:var(--s1);border-radius:6px;font-size:10px;text-align:center;color:var(--td);cursor:pointer" onclick="App.toast('Coming soon','info')">Add Expense</div>
-          </div>
-        </div>
+          ${quickHtml}
+        </div>` : `
+        <div style="padding:14px;background:var(--bg);border:1.5px solid var(--b1);border-radius:var(--radius);box-shadow:var(--shadow)">
+          <div class="module-section-title" style="padding:0 0 8px;margin:0">Quick Actions</div>
+          <div style="font-size:11px;color:var(--tm);text-align:center;padding:12px">—</div>
+        </div>`}
       </div>
 
-      <!-- Admin Zone (T1/T2) -->
       <div id="admin-zone"></div>
     </div>
 
     <div class="bottom-bar">
-      <button class="nav-item active" onclick="App.go('dashboard')">
-        <span class="nav-icon">🏠</span>Home
-      </button>
-      <button class="nav-item" onclick="App.go('profile')">
-        <span class="nav-icon">👤</span>Profile
-      </button>
+      <button class="nav-item active" onclick="App.go('dashboard')">Home</button>
+      <button class="nav-item" onclick="App.go('profile')">Profile</button>
     </div>
   </div>`;
 }
@@ -454,13 +554,13 @@ async function loadModules() {
         html += `
         <div style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;opacity:.4">
           <span style="width:6px;height:6px;border-radius:50%;background:${statusDot};flex-shrink:0"></span>
-          <span style="font-size:12px;font-weight:500;flex:1;color:var(--tm)">${esc(m.icon)} ${esc(m.module_name)} — coming soon</span>
+          <span style="font-size:12px;font-weight:500;flex:1;color:var(--tm)">${esc(m.module_name_en || m.module_name)} <span style="font-size:10px;color:var(--tm)">— coming soon</span></span>
         </div>`;
       } else {
         html += `
         <div style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;cursor:pointer;transition:background .15s" onclick="Screens.launchModule('${esc(m.app_url)}')" onmouseover="this.style.background='var(--gold-bg)'" onmouseout="this.style.background='transparent'">
           <span style="width:6px;height:6px;border-radius:50%;background:${statusDot};flex-shrink:0"></span>
-          <span style="font-size:12px;font-weight:600;flex:1">${esc(m.icon)} ${esc(m.module_name)}</span>
+          <span style="font-size:12px;font-weight:600;flex:1">${esc(m.module_name_en || m.module_name)}${m.module_name ? ` <span style="font-size:10px;font-weight:400;color:var(--td)">· ${esc(m.module_name)}</span>` : ''}</span>
         </div>`;
       }
     });
@@ -520,16 +620,12 @@ function renderProfile() {
              <button class="btn btn-outline btn-full" onclick="Screens.switchUserFlow()">👥 Switch User</button>`
           : `<button class="btn btn-outline btn-full" onclick="Screens.showChangePassword()">🔑 Change Password</button>`
         }
-        <button class="btn btn-danger btn-full" onclick="Screens.doLogout()">🚪 ออกจากระบบ</button>
+        <button class="btn btn-danger btn-full" onclick="Screens.doLogout()">Log out</button>
       </div>
     </div>
     <div class="bottom-bar">
-      <button class="nav-item" onclick="App.go('dashboard')">
-        <span class="nav-icon">🏠</span>Home
-      </button>
-      <button class="nav-item active" onclick="App.go('profile')">
-        <span class="nav-icon">👤</span>Profile
-      </button>
+      <button class="nav-item" onclick="App.go('dashboard')">Home</button>
+      <button class="nav-item active" onclick="App.go('profile')">Profile</button>
     </div>
   </div>`;
 }
@@ -652,6 +748,7 @@ async function doLogout() {
     await API.logout();
   } catch { /* ignore */ }
   API.clearSession();
+  localStorage.removeItem('spg_token');
   App.hideLoader();
   App.go('login');
   App.toast('Signed out', 'info');

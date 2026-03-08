@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * api.js — API Client + Session Manager
- * v2.0 — Supabase Edge Function
+ * v2.1 — Supabase Edge Function
  * ═══════════════════════════════════════════
  * Changes from v1 (Apps Script):
  *   1. BASE_URL → Supabase Edge Function URL

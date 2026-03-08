@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════
    SPG App — Home Module
    styles.css — Warm Light Theme, Gold Accent
-   Version 2.2.2 | 8 MAR 2026 | Siam Palette Group
+   Version 2.2.3 | 8 MAR 2026 | Siam Palette Group
    Font: IBM Plex Sans Thai
    ═══════════════════════════════════════════ */
 
@@ -710,7 +710,7 @@ select.input-field {
 .bottom-bar .nav-item {
   flex: 1;
   display: flex; flex-direction: column; align-items: center;
-  padding: 10px 0 6px;
+  padding: 8px 0 2px;
   font-size: 10px; color: var(--tm);
   cursor: pointer;
   transition: color .15s;

@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════
    SPG App — Home Module
    styles.css — Warm Light Theme, Gold Accent
-   Version 2.1.1 | 8 MAR 2026 | Siam Palette Group
+   Version 2.2 | 8 MAR 2026 | Siam Palette Group
    Font: IBM Plex Sans Thai
    ═══════════════════════════════════════════ */
 
@@ -80,7 +80,7 @@ html, body {
 .header-bar {
   display: flex;
   align-items: center;
-  padding: max(12px, var(--safe-top)) 16px 12px;
+  padding: calc(12px + var(--safe-top)) 16px 12px;
   gap: 10px;
   background: #fdfaf4;
   border-bottom: 1px solid var(--b1);
@@ -127,6 +127,7 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: 40px 24px;
+  padding-top: calc(40px + var(--safe-top));
   flex: 1;
 }
 .login-logo-text {
@@ -462,7 +463,9 @@ select.input-field {
 .pending-screen {
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  padding: 40px 24px; flex: 1;
+  padding: 40px 24px;
+  padding-top: calc(40px + var(--safe-top));
+  flex: 1;
 }
 .pending-icon { font-size: 40px; color: var(--gold); }
 .pending-title { font-size: 18px; font-weight: 700; color: var(--orange); margin: 12px 0 6px; }
@@ -703,7 +706,7 @@ select.input-field {
   display: flex;
   border-top: 1px solid var(--b1);
   background: var(--bg);
-  padding-bottom: max(8px, var(--safe-bottom));
+  padding-bottom: calc(8px + var(--safe-bottom));
 }
 .bottom-bar .nav-item {
   flex: 1;
@@ -766,4 +769,21 @@ select.input-field {
   .screen-body { padding: 28px 60px; }
   .header-bar { padding-left: 60px; padding-right: 60px; }
   .module-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ═══ PWA Standalone Mode ═══ */
+@media (display-mode: standalone) {
+  /* Status bar area — gold tint behind transparent status bar */
+  .screen { background: linear-gradient(180deg, #fdfaf4 0%, #fff 22%); }
+  .header-bar { background: #fdfaf4; }
+}
+
+/* ═══ Mobile: small screen ═══ */
+@media (max-width: 390px) {
+  .header-bar { gap: 6px; padding-left: 12px; padding-right: 12px; }
+  .header-bar .header-title { font-size: 14px; }
+  .header-bar .back-btn { width: 30px; height: 30px; }
+  .screen-body { padding: 12px; padding-bottom: calc(72px + var(--safe-bottom)); }
+  .dashboard-header .dash-name { font-size: 20px; }
+  .bottom-bar .nav-item { padding: 8px 0 4px; font-size: 9px; }
 }

@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════
    SPG App — Home Module
    styles.css — Warm Light Theme, Gold Accent
-   Version 2.2 | 8 MAR 2026 | Siam Palette Group
+   Version 2.2.1 | 8 MAR 2026 | Siam Palette Group
    Font: IBM Plex Sans Thai
    ═══════════════════════════════════════════ */
 
@@ -61,15 +61,14 @@ html, body {
 
 /* ═══ SCREEN WRAPPER ═══ */
 #app {
-  height: 100vh;
-  height: 100dvh;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
   overflow: hidden;
 }
 .screen {
   max-width: 100%;
   margin: 0 auto;
-  height: 100vh;
-  height: 100dvh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   position: relative;

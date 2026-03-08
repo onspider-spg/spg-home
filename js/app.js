@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * app.js — Router + Screen Manager + Sidebar + Utilities
- * Version 3.4.1 | 7 MAR 2026 | Siam Palette Group
+ * Version 3.4.2 | 8 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * 
  * Route Map:
@@ -102,8 +102,12 @@ const App = (() => {
       setTimeout(() => def.onLoad(params), 50);
     }
 
-    // Scroll to top
+    // Scroll to top — reset all scroll containers (fixes iOS PWA viewport stuck)
     window.scrollTo(0, 0);
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    const sb = container.querySelector('.screen-body');
+    if (sb) sb.scrollTop = 0;
 
     // Update URL hash
     const hash = buildHash(route, params);
@@ -309,6 +313,11 @@ const App = (() => {
   function init() {
     const session = API.getSession();
 
+    // Force viewport reset (iOS PWA: returning from other module can shift viewport)
+    window.scrollTo(0, 0);
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+
     // #logout — cross-module logout link
     // Usage: location.href = 'https://onspider-spg.github.io/spg-home/#logout'
     if (location.hash === '#logout') {
@@ -343,6 +352,14 @@ const App = (() => {
       } else {
         const { route: r, params: p } = parseHash(location.hash);
         if (r && ROUTES[r]) go(r, p);
+      }
+    });
+
+    // iOS PWA: reset viewport when returning from other module (BFCache / tab switch)
+    window.addEventListener('pageshow', (e) => {
+      if (e.persisted) {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
       }
     });
   }

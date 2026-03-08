@@ -1,5 +1,5 @@
 /**
- * Version 2.3.4 | 8 MAR 2026 | Siam Palette Group
+ * Version 2.3.5 | 8 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens.js — Screen Renderers S1–S6
@@ -28,7 +28,7 @@ function renderLogin() {
   return `
   <div class="screen screen-enter">
     <div class="login-screen">
-      <div style="margin-bottom:6px"><img src="img/logo.png" alt="SPG" width="64" height="64" style="display:block;margin:0 auto"></div>
+      <div style="font-size:48px;margin-bottom:6px">🎨</div>
       <div class="login-logo-text">SPG</div>
       <div class="login-brand">SIAM PALETTE GROUP</div>
       <div class="login-sub">Management System</div>

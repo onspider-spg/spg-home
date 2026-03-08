@@ -1,5 +1,5 @@
 /**
- * Version 2.3.1 | 7 MAR 2026 | Siam Palette Group
+ * Version 2.3.4 | 8 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens.js — Screen Renderers S1–S6
@@ -28,7 +28,7 @@ function renderLogin() {
   return `
   <div class="screen screen-enter">
     <div class="login-screen">
-      <div style="font-size:48px;margin-bottom:6px">🎨</div>
+      <div style="margin-bottom:6px"><img src="img/logo.png" alt="SPG" width="64" height="64" style="display:block;margin:0 auto"></div>
       <div class="login-logo-text">SPG</div>
       <div class="login-brand">SIAM PALETTE GROUP</div>
       <div class="login-sub">Management System</div>
@@ -903,7 +903,7 @@ function renderTopbar(title, subtitle) {
           <span style="display:block;height:1.5px;border-radius:1px;background:var(--t)"></span>
         </div>
       </button>
-      <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#d4990f,#a67208);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:9px;color:#fff;flex-shrink:0">SPG</div>
+      <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#d4990f,#a67208);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:9px;color:#fff;flex-shrink:0;cursor:pointer" onclick="App.go('dashboard')">SPG</div>
       <div style="flex:1;min-width:0">
         <div class="header-title">${esc(title || 'Siam Palette Group')}</div>
         ${subtitle ? '<div class="header-sub">' + esc(subtitle) + '</div>' : ''}

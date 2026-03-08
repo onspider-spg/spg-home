@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * app.js — Router + Screen Manager + Sidebar + Utilities
- * Version 3.4.2 | 8 MAR 2026 | Siam Palette Group
+ * Version 3.4.3 | 8 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * 
  * Route Map:
@@ -355,13 +355,25 @@ const App = (() => {
       }
     });
 
-    // iOS PWA: reset viewport when returning from other module (BFCache / tab switch)
-    window.addEventListener('pageshow', (e) => {
-      if (e.persisted) {
-        window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-      }
+    // iOS PWA: reset viewport when returning from other module
+    window.addEventListener('pageshow', () => {
+      _resetViewport();
     });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') _resetViewport();
+    });
+    window.addEventListener('focus', _resetViewport);
+  }
+
+  function _resetViewport() {
+    window.scrollTo(0, 0);
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
+    // Delayed reset — iOS sometimes applies scroll after event
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+    }, 100);
   }
 
   // Boot on DOM ready

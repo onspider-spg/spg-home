@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════
    SPG App — Home Module
    styles.css — Warm Light Theme, Gold Accent
-   Version 2.2.1 | 8 MAR 2026 | Siam Palette Group
+   Version 2.2.2 | 8 MAR 2026 | Siam Palette Group
    Font: IBM Plex Sans Thai
    ═══════════════════════════════════════════ */
 
@@ -116,7 +116,7 @@ html, body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 16px;
-  padding-bottom: calc(16px + var(--safe-bottom));
+  padding-bottom: 16px;
 }
 
 /* ═══ LOGIN SCREEN ═══ */
@@ -705,7 +705,7 @@ select.input-field {
   display: flex;
   border-top: 1px solid var(--b1);
   background: var(--bg);
-  padding-bottom: calc(8px + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
 }
 .bottom-bar .nav-item {
   flex: 1;
@@ -782,7 +782,7 @@ select.input-field {
   .header-bar { gap: 6px; padding-left: 12px; padding-right: 12px; }
   .header-bar .header-title { font-size: 14px; }
   .header-bar .back-btn { width: 30px; height: 30px; }
-  .screen-body { padding: 12px; padding-bottom: calc(72px + var(--safe-bottom)); }
+  .screen-body { padding: 12px; }
   .dashboard-header .dash-name { font-size: 20px; }
   .bottom-bar .nav-item { padding: 8px 0 4px; font-size: 9px; }
 }

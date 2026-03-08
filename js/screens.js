@@ -1,5 +1,5 @@
 /**
- * Version 2.3.5 | 8 MAR 2026 | Siam Palette Group
+ * Version 2.3.6 | 8 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens.js — Screen Renderers S1–S6
@@ -593,7 +593,7 @@ function launchModule(url) {
   const s = API.getSession();
   if (!s) return;
   const sep = url.includes('?') ? '&' : '?';
-  window.open(`${url}${sep}token=${s.token}`, '_self');
+  location.href = `${url}${sep}token=${s.token}`;
 }
 
 // ════════════════════════════════

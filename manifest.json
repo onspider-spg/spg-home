@@ -3,7 +3,7 @@
   "short_name": "SPG",
   "description": "Siam Palette Group Management System",
   "start_url": "/spg-home/#dashboard",
-  "scope": "/spg-home/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#fdfaf4",

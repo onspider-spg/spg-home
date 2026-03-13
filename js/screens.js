@@ -1,5 +1,5 @@
 /**
- * Version 2.3.8 | 14 MAR 2026 | Siam Palette Group
+ * Version 2.3.9 | 14 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens.js — Screen Renderers S1–S6
@@ -542,27 +542,17 @@ async function loadModules() {
       return;
     }
 
-    // Render modules as list (wireframe style)
+    // Render modules as list — only accessible modules shown
     let html = '';
     data.modules.forEach(m => {
-      if (!m.is_accessible && m.access_level === 'no_access') return;
+      if (!m.is_accessible) return;
 
-      const disabled = !m.is_accessible;
       const statusDot = m.status === 'active' ? 'var(--green)' : 'var(--orange)';
-
-      if (disabled) {
-        html += `
-        <div style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;opacity:.4">
-          <span style="width:6px;height:6px;border-radius:50%;background:${statusDot};flex-shrink:0"></span>
-          <span style="font-size:12px;font-weight:500;flex:1;color:var(--tm)">${esc(m.module_name_en || m.module_name)} <span style="font-size:10px;color:var(--tm)">— coming soon</span></span>
-        </div>`;
-      } else {
-        html += `
+      html += `
         <div style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;cursor:pointer;transition:background .15s" onclick="Screens.launchModule('${esc(m.app_url)}')" onmouseover="this.style.background='var(--gold-bg)'" onmouseout="this.style.background='transparent'">
           <span style="width:6px;height:6px;border-radius:50%;background:${statusDot};flex-shrink:0"></span>
           <span style="font-size:12px;font-weight:600;flex:1">${esc(m.module_name_en || m.module_name)}${m.module_name ? ` <span style="font-size:10px;font-weight:400;color:var(--td)">· ${esc(m.module_name)}</span>` : ''}</span>
         </div>`;
-      }
     });
     grid.innerHTML = html || '<div style="text-align:center;padding:16px;color:var(--tm);font-size:12px">No modules available</div>';
 

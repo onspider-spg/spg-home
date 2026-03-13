@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * app.js — Router + Screen Manager + Sidebar + Utilities
- * Version 3.4.4 | 14 MAR 2026 | Siam Palette Group
+ * Version 3.4.5 | 14 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * 
  * Route Map:
@@ -267,17 +267,13 @@ const App = (() => {
 
   function _renderSidebarModuleList(el, modules) {
     el.innerHTML = modules
-      .filter(m => m.is_accessible || m.status === 'coming_soon')
+      .filter(m => m.is_accessible)
       .map(m => {
-        const disabled = !m.is_accessible;
         const badge = m.badge_count ? `<span class="sidebar-badge">${m.badge_count}</span>` : '';
         const label = m.module_name_en || m.module_name || m.module_id;
         const sub = m.module_name && m.module_name_en ? ` <span style="font-size:9px;color:var(--tm)">· ${Screens.esc(m.module_name)}</span>` : '';
-        if (disabled) {
-          return `<div class="sidebar-item" style="opacity:.4;cursor:default">${Screens.esc(label)}${sub} <span style="font-size:8px;padding:1px 5px;border-radius:4px;background:var(--orange-bg);color:var(--orange);margin-left:auto">Soon</span></div>`;
-        }
         return `<div class="sidebar-item" onclick="Screens.launchModule('${Screens.esc(m.app_url)}')">${Screens.esc(label)}${sub} ${badge}</div>`;
-      }).join('');
+      }).join('') || '<div class="sidebar-item" style="color:var(--tm);font-size:11px">No modules</div>';
   }
 
   let _sidebarBuilt = false;

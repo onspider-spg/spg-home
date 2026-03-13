@@ -1,5 +1,5 @@
 /**
- * Version 2.3.7 | 14 MAR 2026 | Siam Palette Group
+ * Version 2.3.6 | 8 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens.js — Screen Renderers S1–S6
@@ -103,8 +103,8 @@ function showApiConfig() {
       <div class="modal-handle"></div>
       <div class="modal-title">API Settings</div>
       <div class="input-group">
-        <label>API Base URL</label>
-        <input type="url" class="input-field" id="inp-api-url-edit" value="${current}" placeholder="https://xxx.supabase.co/functions/v1/api">
+        <label>Apps Script Web App URL</label>
+        <input type="url" class="input-field" id="inp-api-url-edit" value="${current}" placeholder="https://script.google.com/macros/s/…/exec">
       </div>
       <div style="display:flex;gap:8px;margin-top:16px">
         <button class="btn btn-gold btn-full" onclick="API.setBaseUrl($('inp-api-url-edit').value);document.querySelector('.modal-overlay').remove();App.toast('URL updated','success')">บันทึก</button>

@@ -1,5 +1,5 @@
 /**
- * Version 2.3.1 | 14 MAR 2026 | Siam Palette Group
+ * Version 2.3 | 7 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens2.js — Screens S7–S12
@@ -8,10 +8,6 @@
 
 (() => {
 const { $, esc, showFieldError, hideError, formatDate, formatShortDate } = Screens;
-
-// ─── Shared Tier Helpers ───
-const tierColor = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold)' : l<=4 ? 'var(--blue)' : 'var(--tm)'; };
-const tierBg = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold-bg2)' : l<=4 ? 'var(--blue-bg)' : 'var(--s2)'; };
 
 // ════════════════════════════════
 // S7: REGISTRATION (Public)
@@ -238,6 +234,9 @@ function renderAccountList(container) {
     if (sortBy === 'created') return new Date(b.created_at || 0) - new Date(a.created_at || 0);
     return 0;
   });
+
+  const tierColor = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold)' : l<=4 ? 'var(--blue)' : 'var(--tm)'; };
+  const tierBg = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold-bg2)' : l<=4 ? 'var(--blue-bg)' : 'var(--s2)'; };
 
   let html = `<div class="admin-toolbar">
     <input type="text" class="input-field input-sm" id="acc-search" placeholder="🔍 Search accounts..." value="${esc(q)}" oninput="Screens.filterAccounts()">
@@ -664,8 +663,7 @@ async function doEditAccount(accountId) {
 }
 
 async function suspendAccount(accountId) {
-  const ok = await App.showDialog({ title: 'Suspend Account', message: 'ยืนยันระงับบัญชีนี้?', confirmText: 'Suspend', danger: true });
-  if (!ok) return;
+  if (!confirm('Confirm suspend this account?')) return;
   App.showLoader();
   try {
     await API.adminUpdateAccount({ target_account_id: accountId, status: 'suspended' });
@@ -757,14 +755,8 @@ async function loadRegReview(requestId) {
 }
 
 async function reviewReg(requestId, action) {
-  const isApprove = action === 'approve';
-  const ok = await App.showDialog({
-    title: isApprove ? 'Approve' : 'Reject',
-    message: isApprove ? 'ยืนยันอนุมัติคำขอนี้?' : 'ยืนยันปฏิเสธคำขอนี้?',
-    confirmText: isApprove ? '✅ อนุมัติ' : '❌ ปฏิเสธ',
-    danger: !isApprove
-  });
-  if (!ok) return;
+  const confirmMsg = action === 'approve' ? 'ยืนยันอนุมัติคำขอนี้?' : 'ยืนยันปฏิเสธคำขอนี้?';
+  if (!confirm(confirmMsg)) return;
 
   const tier_id = $('inp-rev-tier')?.value || 'T5';
   const review_note = $('inp-rev-note')?.value || '';
@@ -1313,6 +1305,9 @@ function renderTierGrid(container) {
 
   const oMap = {};
   overrides.forEach(o => { oMap[`${o.account_id}|${o.module_id}`] = o; });
+
+  const tierColor = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold)' : l<=4 ? 'var(--blue)' : 'var(--tm)'; };
+  const tierBg = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold-bg2)' : l<=4 ? 'var(--blue-bg)' : 'var(--s2)'; };
 
   let hdr = `<th style="position:sticky;left:0;background:var(--s1);z-index:2;min-width:130px;text-align:left">Account</th><th style="text-align:center;min-width:60px">Global</th>`;
   mods.forEach(m => { hdr += `<th style="min-width:90px;text-align:center">${esc(m.module_name_en || m.module_id)}</th>`; });

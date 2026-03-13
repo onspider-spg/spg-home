@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * app.js — Router + Screen Manager + Sidebar + Utilities
- * Version 3.4.4 | 14 MAR 2026 | Siam Palette Group
+ * Version 3.4.3 | 8 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * 
  * Route Map:
@@ -157,7 +157,12 @@ const App = (() => {
   // SIDEBAR — Slide-out left panel
   // ═══════════════════════════════════════════
 
-  // esc() → use Screens.esc() (single source in screens.js)
+  function esc(str) {
+    if (str === null || str === undefined) return '';
+    const d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
+  }
 
   function initSidebar() {
     const s = API.getSession();
@@ -177,10 +182,10 @@ const App = (() => {
     // Header: profile info
     document.getElementById('sidebarHeader').innerHTML = `
       <div class="sidebar-profile">
-        <div class="sidebar-avatar">${Screens.esc(initial)}</div>
+        <div class="sidebar-avatar">${esc(initial)}</div>
         <div>
-          <div class="sidebar-name">${Screens.esc(s.display_name || s.display_label)}</div>
-          <div class="sidebar-meta">${Screens.esc(s.tier_id)} · ${Screens.esc(s.store_id || 'HQ')}</div>
+          <div class="sidebar-name">${esc(s.display_name || s.display_label)}</div>
+          <div class="sidebar-meta">${esc(s.tier_id)} · ${esc(s.store_id || 'HQ')}</div>
         </div>
       </div>`;
 
@@ -272,11 +277,11 @@ const App = (() => {
         const disabled = !m.is_accessible;
         const badge = m.badge_count ? `<span class="sidebar-badge">${m.badge_count}</span>` : '';
         const label = m.module_name_en || m.module_name || m.module_id;
-        const sub = m.module_name && m.module_name_en ? ` <span style="font-size:9px;color:var(--tm)">· ${Screens.esc(m.module_name)}</span>` : '';
+        const sub = m.module_name && m.module_name_en ? ` <span style="font-size:9px;color:var(--tm)">· ${esc(m.module_name)}</span>` : '';
         if (disabled) {
-          return `<div class="sidebar-item" style="opacity:.4;cursor:default">${Screens.esc(label)}${sub} <span style="font-size:8px;padding:1px 5px;border-radius:4px;background:var(--orange-bg);color:var(--orange);margin-left:auto">Soon</span></div>`;
+          return `<div class="sidebar-item" style="opacity:.4;cursor:default">${esc(label)}${sub} <span style="font-size:8px;padding:1px 5px;border-radius:4px;background:var(--orange-bg);color:var(--orange);margin-left:auto">Soon</span></div>`;
         }
-        return `<div class="sidebar-item" onclick="Screens.launchModule('${Screens.esc(m.app_url)}')">${Screens.esc(label)}${sub} ${badge}</div>`;
+        return `<div class="sidebar-item" onclick="Screens.launchModule('${esc(m.app_url)}')">${esc(label)}${sub} ${badge}</div>`;
       }).join('');
   }
 
@@ -302,33 +307,6 @@ const App = (() => {
     // Mark active sidebar item based on current route
     document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
     // Simple matching — will enhance in Phase 2-4
-  }
-
-  // ═══════════════════════════════════════════
-  // DIALOG — Custom confirm replacement (non-blocking)
-  // ═══════════════════════════════════════════
-
-  function showDialog({ title, message, confirmText, cancelText, danger } = {}) {
-    return new Promise(resolve => {
-      const id = 'spg-dlg-' + Date.now();
-      const _esc = Screens.esc;
-      const html = `
-      <div class="modal-overlay" id="${id}" style="z-index:9999">
-        <div class="modal-sheet" style="max-width:320px">
-          <div class="modal-handle"></div>
-          <div class="modal-title">${_esc(title || 'ยืนยัน')}</div>
-          <div style="font-size:13px;color:var(--td);margin-bottom:16px;line-height:1.5">${_esc(message || '')}</div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-outline" style="flex:1" id="${id}-no">${_esc(cancelText || 'ยกเลิก')}</button>
-            <button class="btn ${danger ? 'btn-danger' : 'btn-gold'}" style="flex:1" id="${id}-yes">${_esc(confirmText || 'ยืนยัน')}</button>
-          </div>
-        </div>
-      </div>`;
-      document.body.insertAdjacentHTML('beforeend', html);
-      const close = (val) => { document.getElementById(id)?.remove(); resolve(val); };
-      document.getElementById(`${id}-no`).onclick = () => close(false);
-      document.getElementById(`${id}-yes`).onclick = () => close(true);
-    });
   }
 
   // ─── INIT ───
@@ -406,7 +384,7 @@ const App = (() => {
   }
 
   return {
-    go, updateHash, toast, showLoader, hideLoader, showDialog,
+    go, updateHash, toast, showLoader, hideLoader,
     // Sidebar
     openSidebar, closeSidebar, goSidebar,
     initSidebar, updateSidebarModules,

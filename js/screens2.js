@@ -1,5 +1,5 @@
 /**
- * Version 2.3.2 | 14 MAR 2026 | Siam Palette Group
+ * Version 2.4 | 14 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens2.js — Screens S7–S12
@@ -366,8 +366,16 @@ async function doCreateAccount() {
 }
 
 // ─── Permissions Tab ───
+let _cachedPerms = null;
+
 async function loadPermissions(container) {
-  const data = await API.adminGetPermissions();
+  _cachedPerms = await API.adminGetPermissions();
+  renderPermissions(container);
+}
+
+function renderPermissions(container) {
+  const data = _cachedPerms;
+  if (!data) return;
   const PERM_OPTIONS = ['no_access', 'view_only', 'edit', 'admin', 'super_admin'];
   
   let headerHtml = '<th style="text-align:left;position:sticky;left:0;background:var(--s1);z-index:2;min-width:100px">Module</th>';
@@ -408,7 +416,13 @@ async function setPerm(moduleId, tierId, newLevel) {
   try {
     await API.adminUpdatePermission(moduleId, tierId, newLevel);
     App.toast(`${tierId} → ${newLevel.replace('_',' ')}`, 'success');
-    loadAdminContent();
+    // Update cache + re-render (no re-fetch)
+    if (_cachedPerms) {
+      const mod = _cachedPerms.modules.find(m => m.module_id === moduleId);
+      if (mod) mod.permissions[tierId] = newLevel;
+      const container = $('admin-content');
+      if (container) renderPermissions(container);
+    }
   } catch (err) {
     App.toast(err.message, 'error');
   }
@@ -477,16 +491,22 @@ function filterRegs() {
 }
 
 // ─── Bridge Tab ───
+let _cachedBridges = null;
+
 async function loadBridge(container) {
   const data = await API.adminGetBridgeConfig();
+  _cachedBridges = data.bridges || [];
+  renderBridges(container);
+}
 
-  if (!data.bridges || data.bridges.length === 0) {
+function renderBridges(container) {
+  if (!_cachedBridges || _cachedBridges.length === 0) {
     container.innerHTML = `<div class="empty-state"><div class="empty-text">No Data Bridges configured</div></div>`;
     return;
   }
 
   let rows = '';
-  data.bridges.forEach(b => {
+  _cachedBridges.forEach(b => {
     const isOn = b.is_enabled;
     rows += `
     <tr>
@@ -512,7 +532,13 @@ async function toggleBridge(bridgeId, enable) {
   try {
     await API.adminUpdateBridge(bridgeId, enable);
     App.toast(enable ? 'Bridge enabled' : 'Bridge disabled', 'success');
-    loadAdminContent();
+    // Update cache + re-render (no re-fetch)
+    if (_cachedBridges) {
+      const b = _cachedBridges.find(x => x.bridge_id === bridgeId);
+      if (b) b.is_enabled = enable;
+      const container = $('admin-content');
+      if (container) renderBridges(container);
+    }
   } catch (err) {
     App.toast(err.message, 'error');
   }
@@ -1116,34 +1142,41 @@ async function loadUsersAdmin(container) {
 }
 
 // ─── Stores Admin Tab ───
+let _cachedStoresAdmin = null;
+
 async function loadStoresAdmin(container) {
   try {
     const data = await API.adminGetAllStores();
-    if (!data.stores || data.stores.length === 0) {
-      container.innerHTML = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateStore()">+ เพิ่มร้าน</button></div><div class="empty-state"><div class="empty-text">No stores</div></div>`;
-      return;
-    }
-    let rows = '';
-    data.stores.forEach(s => {
-      rows += `
-      <tr>
-        <td style="font-weight:700">${esc(s.store_id)}</td>
-        <td>${esc(s.store_name_th || '-')}</td>
-        <td>${esc(s.store_name)}</td>
-        <td style="font-size:11px;color:var(--td)">${esc(s.brand || '-')}</td>
-        <td style="text-align:center"><span class="item-badge ${s.is_active ? 'badge-approved' : 'badge-suspended'}" style="margin:0">${s.is_active ? 'Active' : 'Inactive'}</span></td>
-        <td style="text-align:center"><button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px" onclick='Screens.showEditStore(${JSON.stringify({store_id:s.store_id,store_name:s.store_name||"",store_name_th:s.store_name_th||"",brand:s.brand||"",location:s.location||"",is_active:s.is_active}).replace(/\x27/g,"&#39;")})'>✏️</button></td>
-      </tr>`;
-    });
-    container.innerHTML = `
-    <div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateStore()">+ เพิ่มร้าน</button></div>
-    <div class="perm-table-wrap">
-      <table class="perm-table" style="font-size:12px">
-        <thead><tr><th style="text-align:left">Store ID</th><th style="text-align:left">Name (TH)</th><th style="text-align:left">Name (EN)</th><th style="text-align:left">Brand</th><th>Status</th><th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
+    _cachedStoresAdmin = data.stores || [];
+    renderStoresAdmin(container);
   } catch(e) { container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>'; }
+}
+
+function renderStoresAdmin(container) {
+  if (!_cachedStoresAdmin || _cachedStoresAdmin.length === 0) {
+    container.innerHTML = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateStore()">+ เพิ่มร้าน</button></div><div class="empty-state"><div class="empty-text">No stores</div></div>`;
+    return;
+  }
+  let rows = '';
+  _cachedStoresAdmin.forEach(s => {
+    rows += `
+    <tr>
+      <td style="font-weight:700">${esc(s.store_id)}</td>
+      <td>${esc(s.store_name_th || '-')}</td>
+      <td>${esc(s.store_name)}</td>
+      <td style="font-size:11px;color:var(--td)">${esc(s.brand || '-')}</td>
+      <td style="text-align:center"><span class="item-badge ${s.is_active ? 'badge-approved' : 'badge-suspended'}" style="margin:0">${s.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td style="text-align:center"><button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px" onclick='Screens.showEditStore(${JSON.stringify({store_id:s.store_id,store_name:s.store_name||"",store_name_th:s.store_name_th||"",brand:s.brand||"",location:s.location||"",is_active:s.is_active}).replace(/\x27/g,"&#39;")})'>✏️</button></td>
+    </tr>`;
+  });
+  container.innerHTML = `
+  <div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateStore()">+ เพิ่มร้าน</button></div>
+  <div class="perm-table-wrap">
+    <table class="perm-table" style="font-size:12px">
+      <thead><tr><th style="text-align:left">Store ID</th><th style="text-align:left">Name (TH)</th><th style="text-align:left">Name (EN)</th><th style="text-align:left">Brand</th><th>Status</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
 }
 
 function showCreateStore() {
@@ -1174,8 +1207,13 @@ async function doCreateStore() {
     await API.adminCreateStore(data);
     document.getElementById('modal-create-store')?.remove();
     App.toast('Store created', 'success');
-    _cachedStores = null; // clear dropdown cache
-    loadAdminContent();
+    _cachedStores = null;
+    // Push to admin cache + re-render (no re-fetch)
+    if (_cachedStoresAdmin) {
+      _cachedStoresAdmin.push({ ...data, is_active: true });
+      const container = $('admin-content');
+      if (container) renderStoresAdmin(container);
+    } else { loadAdminContent(); }
   } catch(e) { showFieldError('cs-error', e.message); }
   finally { App.hideLoader(); }
 }
@@ -1214,39 +1252,52 @@ async function doEditStore(storeId) {
     document.getElementById('modal-edit-store')?.remove();
     App.toast('Store updated', 'success');
     _cachedStores = null;
-    loadAdminContent();
+    // Update admin cache + re-render (no re-fetch)
+    if (_cachedStoresAdmin) {
+      const idx = _cachedStoresAdmin.findIndex(s => s.store_id === storeId);
+      if (idx >= 0) Object.assign(_cachedStoresAdmin[idx], data);
+      const container = $('admin-content');
+      if (container) renderStoresAdmin(container);
+    } else { loadAdminContent(); }
   } catch(e) { showFieldError('es-error', e.message); }
   finally { App.hideLoader(); }
 }
 
 // ─── Departments Admin Tab ───
+let _cachedDeptsAdmin = null;
+
 async function loadDeptsAdmin(container) {
   try {
     const data = await API.adminGetAllDepts();
-    if (!data.departments || data.departments.length === 0) {
-      container.innerHTML = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateDept()">+ เพิ่มแผนก</button></div><div class="empty-state"><div class="empty-text">No departments</div></div>`;
-      return;
-    }
-    let rows = '';
-    data.departments.forEach(d => {
-      rows += `
-      <tr>
-        <td style="font-weight:700">${esc(d.dept_id)}</td>
-        <td>${esc(d.dept_name_th || '-')}</td>
-        <td>${esc(d.dept_name)}</td>
-        <td style="text-align:center"><span class="item-badge ${d.is_active ? 'badge-approved' : 'badge-suspended'}" style="margin:0">${d.is_active ? 'Active' : 'Inactive'}</span></td>
-        <td style="text-align:center"><button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px" onclick='Screens.showEditDept(${JSON.stringify({dept_id:d.dept_id,dept_name:d.dept_name||"",dept_name_th:d.dept_name_th||"",is_active:d.is_active}).replace(/\x27/g,"&#39;")})'>✏️</button></td>
-      </tr>`;
-    });
-    container.innerHTML = `
-    <div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateDept()">+ เพิ่มแผนก</button></div>
-    <div class="perm-table-wrap">
-      <table class="perm-table" style="font-size:12px">
-        <thead><tr><th style="text-align:left">Dept ID</th><th style="text-align:left">Name (TH)</th><th style="text-align:left">Name (EN)</th><th>Status</th><th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
+    _cachedDeptsAdmin = data.departments || [];
+    renderDeptsAdmin(container);
   } catch(e) { container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>'; }
+}
+
+function renderDeptsAdmin(container) {
+  if (!_cachedDeptsAdmin || _cachedDeptsAdmin.length === 0) {
+    container.innerHTML = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateDept()">+ เพิ่มแผนก</button></div><div class="empty-state"><div class="empty-text">No departments</div></div>`;
+    return;
+  }
+  let rows = '';
+  _cachedDeptsAdmin.forEach(d => {
+    rows += `
+    <tr>
+      <td style="font-weight:700">${esc(d.dept_id)}</td>
+      <td>${esc(d.dept_name_th || '-')}</td>
+      <td>${esc(d.dept_name)}</td>
+      <td style="text-align:center"><span class="item-badge ${d.is_active ? 'badge-approved' : 'badge-suspended'}" style="margin:0">${d.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td style="text-align:center"><button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px" onclick='Screens.showEditDept(${JSON.stringify({dept_id:d.dept_id,dept_name:d.dept_name||"",dept_name_th:d.dept_name_th||"",is_active:d.is_active}).replace(/\x27/g,"&#39;")})'>✏️</button></td>
+    </tr>`;
+  });
+  container.innerHTML = `
+  <div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateDept()">+ เพิ่มแผนก</button></div>
+  <div class="perm-table-wrap">
+    <table class="perm-table" style="font-size:12px">
+      <thead><tr><th style="text-align:left">Dept ID</th><th style="text-align:left">Name (TH)</th><th style="text-align:left">Name (EN)</th><th>Status</th><th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
 }
 
 function showCreateDept() {
@@ -1276,7 +1327,11 @@ async function doCreateDept() {
     document.getElementById('modal-create-dept')?.remove();
     App.toast('Department created', 'success');
     _cachedDepts = null;
-    loadAdminContent();
+    if (_cachedDeptsAdmin) {
+      _cachedDeptsAdmin.push({ ...data, is_active: true });
+      const container = $('admin-content');
+      if (container) renderDeptsAdmin(container);
+    } else { loadAdminContent(); }
   } catch(e) { showFieldError('cd-error', e.message); }
   finally { App.hideLoader(); }
 }
@@ -1313,7 +1368,12 @@ async function doEditDept(deptId) {
     document.getElementById('modal-edit-dept')?.remove();
     App.toast('Department updated', 'success');
     _cachedDepts = null;
-    loadAdminContent();
+    if (_cachedDeptsAdmin) {
+      const idx = _cachedDeptsAdmin.findIndex(d => d.dept_id === deptId);
+      if (idx >= 0) Object.assign(_cachedDeptsAdmin[idx], data);
+      const container = $('admin-content');
+      if (container) renderDeptsAdmin(container);
+    } else { loadAdminContent(); }
   } catch(e) { showFieldError('ed-error', e.message); }
   finally { App.hideLoader(); }
 }
@@ -1419,7 +1479,20 @@ async function doSetTierOverride(accountId, moduleId) {
     await API.adminSetModuleAccess(accountId, moduleId, tier);
     document.getElementById('modal-tier')?.remove();
     App.toast('Override saved', 'success');
-    loadAdminContent();
+    // Update cache + re-render (no re-fetch)
+    if (_tierData) {
+      const key = `${accountId}|${moduleId}`;
+      const existing = _tierData.overrides.findIndex(o => `${o.account_id}|${o.module_id}` === key);
+      if (existing >= 0) {
+        _tierData.overrides[existing].module_tier = tier;
+        _tierData.overrides[existing].is_active = true;
+      } else {
+        _tierData.overrides.push({ account_id: accountId, module_id: moduleId, module_tier: tier, is_active: true });
+      }
+      const container = $('admin-content');
+      if (container) renderTierGrid(container);
+    }
+    App.hideLoader();
   } catch (e) {
     App.hideLoader();
     showFieldError('tier-error', e.message);
@@ -1432,7 +1505,13 @@ async function doRemoveTierOverride(accountId, moduleId) {
     await API.adminRemoveModuleAccess(accountId, moduleId);
     document.getElementById('modal-tier')?.remove();
     App.toast('Override removed — fallback global', 'success');
-    loadAdminContent();
+    // Remove from cache + re-render (no re-fetch)
+    if (_tierData) {
+      _tierData.overrides = _tierData.overrides.filter(o => !(o.account_id === accountId && o.module_id === moduleId));
+      const container = $('admin-content');
+      if (container) renderTierGrid(container);
+    }
+    App.hideLoader();
   } catch (e) {
     App.hideLoader();
     showFieldError('tier-error', e.message);

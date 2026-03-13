@@ -2,7 +2,7 @@
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * app.js — Router + Screen Manager + Sidebar + Utilities
- * Version 3.4.5 | 14 MAR 2026 | Siam Palette Group
+ * Version 3.4.6 | 14 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * 
  * Route Map:
@@ -327,6 +327,13 @@ const App = (() => {
     });
   }
 
+  // ─── HARD REFRESH ───
+  function hardRefresh() {
+    _sidebarBuilt = false;
+    _cachedModules = null;
+    location.reload();
+  }
+
   // ─── INIT ───
   function init() {
     const session = API.getSession();
@@ -402,7 +409,7 @@ const App = (() => {
   }
 
   return {
-    go, updateHash, toast, showLoader, hideLoader, showDialog,
+    go, updateHash, toast, showLoader, hideLoader, showDialog, hardRefresh,
     // Sidebar
     openSidebar, closeSidebar, goSidebar,
     initSidebar, updateSidebarModules,

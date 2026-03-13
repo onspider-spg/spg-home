@@ -1,5 +1,5 @@
 /**
- * Version 2.3.9 | 14 MAR 2026 | Siam Palette Group
+ * Version 2.4 | 14 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens.js — Screen Renderers S1–S6
@@ -904,6 +904,7 @@ function renderTopbar(title, subtitle) {
         ${subtitle ? '<div class="header-sub">' + esc(subtitle) + '</div>' : ''}
       </div>
       <button class="back-btn" style="border:1px solid var(--b1);position:relative;font-size:14px;color:var(--tm)">🔔<span id="notiBadge" style="position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--red);border:1.5px solid #fff;display:none"></span></button>
+      <button class="back-btn" style="border:1px solid var(--b1);font-size:13px;color:var(--tm)" onclick="App.hardRefresh()">↻</button>
       <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--gold-bg2),#f9e8c0);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--gold);cursor:pointer;flex-shrink:0" onclick="App.go('profile')">${esc(initial)}</div>
     </div>`;
 }

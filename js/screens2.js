@@ -1,5 +1,5 @@
 /**
- * Version 2.4 | 14 MAR 2026 | Siam Palette Group
+ * Version 2.4.1 | 14 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens2.js — Screens S7–S12
@@ -23,6 +23,36 @@ async function getStoresCache() {
 async function getDeptsCache() {
   if (!_cachedDepts) _cachedDepts = (await API.getDepartments()).departments || [];
   return _cachedDepts;
+}
+
+// ─── Shared Table Sort (A-Z + clickable headers) ───
+const _sorts = {};
+function _getSort(tid, defaultKey) {
+  if (!_sorts[tid]) _sorts[tid] = { key: defaultKey, dir: 'asc' };
+  return _sorts[tid];
+}
+function _sortArr(arr, key, dir) {
+  return [...arr].sort((a, b) => {
+    const va = a[key] ?? '', vb = b[key] ?? '';
+    const cmp = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb));
+    return dir === 'desc' ? -cmp : cmp;
+  });
+}
+function _sortTh(label, tid, key, align) {
+  const s = _sorts[tid];
+  const isActive = s && s.key === key;
+  const arrow = isActive ? (s.dir === 'asc' ? '▲' : '▼') : '⇅';
+  const cls = `sortable${isActive ? ' active' : ''}`;
+  return `<th class="${cls}" style="text-align:${align || 'left'}" onclick="Screens.doSort('${tid}','${key}')">${esc(label)} <span class="sort-arrow">${arrow}</span></th>`;
+}
+// Sort renderers — map table ID to its render function + container
+const _sortRenderers = {};
+function doSort(tid, key) {
+  const s = _getSort(tid, key);
+  if (s.key === key) s.dir = s.dir === 'asc' ? 'desc' : 'asc';
+  else { s.key = key; s.dir = 'asc'; }
+  const r = _sortRenderers[tid];
+  if (r) r();
 }
 
 // ════════════════════════════════
@@ -233,7 +263,7 @@ async function loadAccounts(container) {
 
 function renderAccountList(container) {
   const q = $('acc-search')?.value?.toLowerCase() || '';
-  const sortBy = $('acc-sort')?.value || 'name';
+  const s = _getSort('acc', 'display_label');
 
   let filtered = _allAccounts.filter(acc => {
     if (!q) return true;
@@ -242,23 +272,10 @@ function renderAccountList(container) {
       || (acc.account_id || '').toLowerCase().includes(q)
       || (acc.tier_id || '').toLowerCase().includes(q);
   });
-
-  filtered.sort((a, b) => {
-    if (sortBy === 'name') return (a.display_label || '').localeCompare(b.display_label || '');
-    if (sortBy === 'tier') return (a.tier_id || '').localeCompare(b.tier_id || '');
-    if (sortBy === 'status') return (a.status || '').localeCompare(b.status || '');
-    if (sortBy === 'created') return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-    return 0;
-  });
+  filtered = _sortArr(filtered, s.key, s.dir);
 
   let html = `<div class="admin-toolbar">
     <input type="text" class="input-field input-sm" id="acc-search" placeholder="🔍 Search accounts..." value="${esc(q)}" oninput="Screens.filterAccounts()">
-    <select class="input-field input-sm" id="acc-sort" onchange="Screens.filterAccounts()">
-      <option value="name" ${sortBy==='name'?'selected':''}>Sort: Name</option>
-      <option value="tier" ${sortBy==='tier'?'selected':''}>Sort: Tier</option>
-      <option value="status" ${sortBy==='status'?'selected':''}>Sort: Status</option>
-      <option value="created" ${sortBy==='created'?'selected':''}>Sort: Newest</option>
-    </select>
     <button class="btn btn-gold btn-sm" onclick="Screens.showCreateAccount()">+ New</button>
   </div>
   <div style="font-size:11px;color:var(--tm);padding:0 16px 6px">${filtered.length} accounts</div>`;
@@ -267,7 +284,7 @@ function renderAccountList(container) {
     html += '<div class="empty-state"><div class="empty-text">No accounts match</div></div>';
   } else {
     html += `<div class="perm-table-wrap"><table class="perm-table" style="font-size:12px">
-      <thead><tr><th style="text-align:left">Name</th><th style="text-align:left">Email</th><th>Tier</th><th>Store</th><th>Dept</th><th>Status</th><th></th></tr></thead><tbody>`;
+      <thead><tr>${_sortTh('Name','acc','display_label')}${_sortTh('Email','acc','username')}<th style="text-align:center">Tier</th>${_sortTh('Store','acc','store_id','center')}${_sortTh('Dept','acc','dept_id','center')}${_sortTh('Status','acc','status','center')}<th></th></tr></thead><tbody>`;
     filtered.forEach(acc => {
       const badge = acc.status === 'approved' ? 'badge-approved' : acc.status === 'pending' ? 'badge-pending' : 'badge-suspended';
       const rowOpacity = acc.status === 'suspended' ? 'opacity:.5;' : '';
@@ -285,6 +302,7 @@ function renderAccountList(container) {
     html += `</tbody></table></div>`;
   }
   container.innerHTML = html;
+  _sortRenderers['acc'] = () => { const c = $('admin-content'); if (c) renderAccountList(c); };
 }
 
 function filterAccounts() {
@@ -452,6 +470,8 @@ function renderRegList(container) {
       || (r.username || '').toLowerCase().includes(q)
       || (r.requested_store_id || '').toLowerCase().includes(q);
   });
+  // Default A-Z by name
+  filtered.sort((a, b) => (a.display_name || '').localeCompare(b.display_name || ''));
 
   const chipActive = (v) => statusFilter === v ? 'background:var(--gold-bg2);color:var(--gold);border-color:rgba(212,150,10,0.2);font-weight:600' : '';
 
@@ -1023,37 +1043,48 @@ async function doEditUser(userId) {
 
 
 // ─── Modules Admin Tab ───
+let _cachedModulesAdmin = null;
+
 async function loadModulesAdmin(container) {
   try {
     const data = await API.adminGetAllModules();
-    if (!data.modules || data.modules.length === 0) {
-      container.innerHTML = '<div class="empty-state"><div class="empty-text">No modules</div></div>';
-      return;
-    }
-    let rows = '';
-    data.modules.forEach(m => {
-      const statusBadge = m.status === 'active' ? 'badge-approved' : m.status === 'coming_soon' ? 'badge-pending' : 'badge-suspended';
-      const urlShort = (m.app_url || '—').length > 35 ? (m.app_url || '').substring(0, 35) + '…' : (m.app_url || '—');
-      rows += `
-      <tr>
-        <td style="text-align:center;font-size:18px">${esc(m.icon || '📦')}</td>
-        <td style="font-weight:600">${esc(m.module_name)}</td>
-        <td style="font-size:11px;color:var(--td)">${esc(m.module_name_en || '-')}</td>
-        <td style="font-size:9px;color:var(--tm);word-break:break-all">${esc(urlShort)}</td>
-        <td style="text-align:center"><span class="item-badge ${statusBadge}" style="margin:0">${esc(m.status)}</span></td>
-        <td style="text-align:center"><button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px" onclick='Screens.showEditModule(${JSON.stringify({module_id:m.module_id,module_name:m.module_name||"",module_name_en:m.module_name_en||"",icon:m.icon||"",app_url:m.app_url||"",status:m.status||"inactive",sort_order:m.sort_order||0}).replace(/\x27/g,"&#39;")})'>✏️</button></td>
-      </tr>`;
-    });
-    container.innerHTML = `
-    <div class="perm-table-wrap">
-      <table class="perm-table" style="font-size:12px">
-        <thead><tr><th>Icon</th><th style="text-align:left">Module</th><th style="text-align:left">Name (EN)</th><th style="text-align:left">URL</th><th>Status</th><th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
+    _cachedModulesAdmin = data.modules || [];
+    renderModulesAdmin(container);
   } catch(e) {
     container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>';
   }
+}
+
+function renderModulesAdmin(container) {
+  if (!_cachedModulesAdmin || _cachedModulesAdmin.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-text">No modules</div></div>';
+    return;
+  }
+  const s = _getSort('mod', 'sort_order');
+  const sorted = _sortArr(_cachedModulesAdmin, s.key, s.dir);
+
+  let rows = '';
+  sorted.forEach(m => {
+    const statusBadge = m.status === 'active' ? 'badge-approved' : m.status === 'coming_soon' ? 'badge-pending' : 'badge-suspended';
+    const urlShort = (m.app_url || '—').length > 35 ? (m.app_url || '').substring(0, 35) + '…' : (m.app_url || '—');
+    rows += `
+    <tr>
+      <td style="text-align:center;font-size:18px">${esc(m.icon || '📦')}</td>
+      <td style="font-weight:600">${esc(m.module_name)}</td>
+      <td style="font-size:11px;color:var(--td)">${esc(m.module_name_en || '-')}</td>
+      <td style="font-size:9px;color:var(--tm);word-break:break-all">${esc(urlShort)}</td>
+      <td style="text-align:center"><span class="item-badge ${statusBadge}" style="margin:0">${esc(m.status)}</span></td>
+      <td style="text-align:center"><button class="btn btn-outline btn-sm" style="padding:3px 8px;font-size:9px" onclick='Screens.showEditModule(${JSON.stringify({module_id:m.module_id,module_name:m.module_name||"",module_name_en:m.module_name_en||"",icon:m.icon||"",app_url:m.app_url||"",status:m.status||"inactive",sort_order:m.sort_order||0}).replace(/\x27/g,"&#39;")})'>✏️</button></td>
+    </tr>`;
+  });
+  container.innerHTML = `
+  <div class="perm-table-wrap">
+    <table class="perm-table" style="font-size:12px">
+      <thead><tr><th>Icon</th>${_sortTh('Module','mod','module_name')}${_sortTh('Name (EN)','mod','module_name_en')}<th style="text-align:left">URL</th>${_sortTh('Status','mod','status','center')}<th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+  _sortRenderers['mod'] = () => { const c = $('admin-content'); if (c) renderModulesAdmin(c); };
 }
 
 function showEditModule(mod) {
@@ -1100,7 +1131,12 @@ async function doEditModule(moduleId) {
     await API.adminUpdateModule(data);
     document.getElementById('modal-edit-mod')?.remove();
     App.toast('Module updated', 'success');
-    loadAdminContent();
+    if (_cachedModulesAdmin) {
+      const idx = _cachedModulesAdmin.findIndex(m => m.module_id === moduleId);
+      if (idx >= 0) Object.assign(_cachedModulesAdmin[idx], data);
+      const container = $('admin-content');
+      if (container) renderModulesAdmin(container);
+    } else { loadAdminContent(); }
   } catch(e) {
     showFieldError('em-error', e.message);
   } finally { App.hideLoader(); }
@@ -1108,37 +1144,51 @@ async function doEditModule(moduleId) {
 
 
 // ─── Users Admin Tab ───
+let _cachedUsersAdmin = null;
+
 async function loadUsersAdmin(container) {
   try {
     const q = $('user-admin-search')?.value || '';
     const data = await API.adminListAllUsers(q);
-    let searchBar = `<div class="admin-toolbar"><input type="text" class="input-field input-sm" id="user-admin-search" placeholder="🔍 Search users..." value="${esc(q)}" onkeyup="if(event.key==='Enter')Screens.loadUsersAdmin($('admin-content'))"></div>`;
-    if (!data.users || data.users.length === 0) {
-      container.innerHTML = searchBar + '<div class="empty-state"><div class="empty-text">No users found</div></div>';
-      return;
-    }
-    let rows = '';
-    data.users.forEach(u => {
-      rows += `
-      <tr style="cursor:pointer" onclick="App.go('account-detail',{account_id:'${esc(u.account_id)}'})">
-        <td style="text-align:center">${u.is_active ? '🟢' : '🔴'}</td>
-        <td style="font-weight:600">${esc(u.display_name)}</td>
-        <td style="font-size:11px;color:var(--td)">${esc(u.account_label)}</td>
-        <td style="text-align:center">${esc(u.store_id || '-')}</td>
-        <td style="text-align:center">${esc(u.dept_id || '-')}</td>
-        <td style="text-align:center;font-size:11px;color:var(--tm)">${esc(u.account_type)}</td>
-        <td style="color:var(--blue);font-size:10px;text-align:center">→</td>
-      </tr>`;
-    });
-    container.innerHTML = searchBar + `
-    <div style="font-size:11px;color:var(--tm);padding:0 16px 6px">${data.total} users</div>
-    <div class="perm-table-wrap">
-      <table class="perm-table" style="font-size:12px">
-        <thead><tr><th></th><th style="text-align:left">Name</th><th style="text-align:left">Account</th><th>Store</th><th>Dept</th><th>Type</th><th></th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
+    _cachedUsersAdmin = data.users || [];
+    _usersAdminTotal = data.total || 0;
+    renderUsersAdmin(container);
   } catch(e) { container.innerHTML = '<div class="empty-state">' + esc(e.message) + '</div>'; }
+}
+
+let _usersAdminTotal = 0;
+function renderUsersAdmin(container) {
+  const q = $('user-admin-search')?.value || '';
+  let searchBar = `<div class="admin-toolbar"><input type="text" class="input-field input-sm" id="user-admin-search" placeholder="🔍 Search users..." value="${esc(q)}" onkeyup="if(event.key==='Enter')Screens.loadUsersAdmin($('admin-content'))"></div>`;
+  if (!_cachedUsersAdmin || _cachedUsersAdmin.length === 0) {
+    container.innerHTML = searchBar + '<div class="empty-state"><div class="empty-text">No users found</div></div>';
+    return;
+  }
+  const s = _getSort('usr', 'display_name');
+  const sorted = _sortArr(_cachedUsersAdmin, s.key, s.dir);
+
+  let rows = '';
+  sorted.forEach(u => {
+    rows += `
+    <tr style="cursor:pointer" onclick="App.go('account-detail',{account_id:'${esc(u.account_id)}'})">
+      <td style="text-align:center">${u.is_active ? '🟢' : '🔴'}</td>
+      <td style="font-weight:600">${esc(u.display_name)}</td>
+      <td style="font-size:11px;color:var(--td)">${esc(u.account_label)}</td>
+      <td style="text-align:center">${esc(u.store_id || '-')}</td>
+      <td style="text-align:center">${esc(u.dept_id || '-')}</td>
+      <td style="text-align:center;font-size:11px;color:var(--tm)">${esc(u.account_type)}</td>
+      <td style="color:var(--blue);font-size:10px;text-align:center">→</td>
+    </tr>`;
+  });
+  container.innerHTML = searchBar + `
+  <div style="font-size:11px;color:var(--tm);padding:0 16px 6px">${_usersAdminTotal} users</div>
+  <div class="perm-table-wrap">
+    <table class="perm-table" style="font-size:12px">
+      <thead><tr><th></th>${_sortTh('Name','usr','display_name')}${_sortTh('Account','usr','account_label')}<th style="text-align:center">Store</th><th style="text-align:center">Dept</th>${_sortTh('Type','usr','account_type','center')}<th></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+  _sortRenderers['usr'] = () => { const c = $('admin-content'); if (c) renderUsersAdmin(c); };
 }
 
 // ─── Stores Admin Tab ───
@@ -1157,8 +1207,11 @@ function renderStoresAdmin(container) {
     container.innerHTML = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateStore()">+ เพิ่มร้าน</button></div><div class="empty-state"><div class="empty-text">No stores</div></div>`;
     return;
   }
+  const s = _getSort('sto', 'store_id');
+  const sorted = _sortArr(_cachedStoresAdmin, s.key, s.dir);
+
   let rows = '';
-  _cachedStoresAdmin.forEach(s => {
+  sorted.forEach(s => {
     rows += `
     <tr>
       <td style="font-weight:700">${esc(s.store_id)}</td>
@@ -1173,10 +1226,11 @@ function renderStoresAdmin(container) {
   <div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateStore()">+ เพิ่มร้าน</button></div>
   <div class="perm-table-wrap">
     <table class="perm-table" style="font-size:12px">
-      <thead><tr><th style="text-align:left">Store ID</th><th style="text-align:left">Name (TH)</th><th style="text-align:left">Name (EN)</th><th style="text-align:left">Brand</th><th>Status</th><th></th></tr></thead>
+      <thead><tr>${_sortTh('Store ID','sto','store_id')}${_sortTh('Name (TH)','sto','store_name_th')}${_sortTh('Name (EN)','sto','store_name')}${_sortTh('Brand','sto','brand')}<th style="text-align:center">Status</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </div>`;
+  _sortRenderers['sto'] = () => { const c = $('admin-content'); if (c) renderStoresAdmin(c); };
 }
 
 function showCreateStore() {
@@ -1279,8 +1333,11 @@ function renderDeptsAdmin(container) {
     container.innerHTML = `<div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateDept()">+ เพิ่มแผนก</button></div><div class="empty-state"><div class="empty-text">No departments</div></div>`;
     return;
   }
+  const s = _getSort('dep', 'dept_id');
+  const sorted = _sortArr(_cachedDeptsAdmin, s.key, s.dir);
+
   let rows = '';
-  _cachedDeptsAdmin.forEach(d => {
+  sorted.forEach(d => {
     rows += `
     <tr>
       <td style="font-weight:700">${esc(d.dept_id)}</td>
@@ -1294,10 +1351,11 @@ function renderDeptsAdmin(container) {
   <div class="admin-toolbar"><button class="btn btn-gold btn-sm" onclick="Screens.showCreateDept()">+ เพิ่มแผนก</button></div>
   <div class="perm-table-wrap">
     <table class="perm-table" style="font-size:12px">
-      <thead><tr><th style="text-align:left">Dept ID</th><th style="text-align:left">Name (TH)</th><th style="text-align:left">Name (EN)</th><th>Status</th><th></th></tr></thead>
+      <thead><tr>${_sortTh('Dept ID','dep','dept_id')}${_sortTh('Name (TH)','dep','dept_name_th')}${_sortTh('Name (EN)','dep','dept_name')}<th style="text-align:center">Status</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </div>`;
+  _sortRenderers['dep'] = () => { const c = $('admin-content'); if (c) renderDeptsAdmin(c); };
 }
 
 function showCreateDept() {
@@ -1527,6 +1585,7 @@ Object.assign(Screens, {
   setPerm,
   toggleBridge,
   filterAccounts,
+  doSort,
   renderAccountDetail, loadAccountDetail, suspendAccount, reactivateAccount,
   showEditAccount, doEditAccount,
   showAddUser, doAddUser, showEditUser, doEditUser,

@@ -1,5 +1,5 @@
 /**
- * Version 2.3.1 | 14 MAR 2026 | Siam Palette Group
+ * Version 2.3.2 | 14 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens2.js — Screens S7–S12
@@ -12,6 +12,18 @@ const { $, esc, showFieldError, hideError, formatDate, formatShortDate } = Scree
 // ─── Shared Tier Helpers ───
 const tierColor = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold)' : l<=4 ? 'var(--blue)' : 'var(--tm)'; };
 const tierBg = (t) => { const l = parseInt((t||'T9').replace('T','')); return l<=2 ? 'var(--gold-bg2)' : l<=4 ? 'var(--blue-bg)' : 'var(--s2)'; };
+
+// ─── Stores/Depts Cache (2.1) ───
+let _cachedStores = null;
+let _cachedDepts = null;
+async function getStoresCache() {
+  if (!_cachedStores) _cachedStores = (await API.getStores()).stores || [];
+  return _cachedStores;
+}
+async function getDeptsCache() {
+  if (!_cachedDepts) _cachedDepts = (await API.getDepartments()).departments || [];
+  return _cachedDepts;
+}
 
 // ════════════════════════════════
 // S7: REGISTRATION (Public)
@@ -70,17 +82,17 @@ function renderRegister() {
 
 async function loadRegisterDropdowns() {
   try {
-    const [stores, depts] = await Promise.all([API.getStores(), API.getDepartments()]);
+    const [stores, depts] = await Promise.all([getStoresCache(), getDeptsCache()]);
     const storeEl = $('inp-reg-store');
     const deptEl = $('inp-reg-dept');
     
     if (storeEl) {
       storeEl.innerHTML = '<option value="">-- Select Store --</option>' +
-        stores.stores.filter(s => s.store_id !== 'ALL').map(s => `<option value="${esc(s.store_id)}">${esc(s.store_name_th || s.store_name)}</option>`).join('');
+        stores.filter(s => s.store_id !== 'ALL').map(s => `<option value="${esc(s.store_id)}">${esc(s.store_name_th || s.store_name)}</option>`).join('');
     }
     if (deptEl) {
       deptEl.innerHTML = '<option value="">-- Select Department --</option>' +
-        depts.departments.map(d => `<option value="${esc(d.dept_id)}">${esc(d.dept_name_th || d.dept_name)}</option>`).join('');
+        depts.map(d => `<option value="${esc(d.dept_id)}">${esc(d.dept_name_th || d.dept_name)}</option>`).join('');
     }
   } catch (err) {
     App.toast('Failed to load store/department data', 'error');
@@ -282,15 +294,14 @@ function filterAccounts() {
 
 // ─── Create Account Modal ───
 async function showCreateAccount() {
-  // Load stores + departments from API
   let storeOptions = '<option value="">-- ไม่ระบุ --</option>';
   let deptOptions = '<option value="">-- ไม่ระบุ --</option>';
   try {
-    const [storesData, deptsData] = await Promise.all([API.getStores(), API.getDepartments()]);
-    if (storesData.stores) storesData.stores.forEach(s => {
+    const [stores, depts] = await Promise.all([getStoresCache(), getDeptsCache()]);
+    stores.forEach(s => {
       storeOptions += `<option value="${esc(s.store_id)}">${esc(s.store_name)} (${esc(s.store_id)})</option>`;
     });
-    if (deptsData.departments) deptsData.departments.forEach(d => {
+    depts.forEach(d => {
       deptOptions += `<option value="${esc(d.dept_id)}">${esc(d.dept_name)} (${esc(d.dept_id)})</option>`;
     });
   } catch (e) { console.warn('Failed to load stores/depts:', e); }
@@ -533,8 +544,12 @@ async function loadAccountDetail(accountId) {
   if (!content) return;
 
   try {
-    const data = await API.adminGetAccounts({ search: accountId, page_size: 50 });
-    const acc = data.accounts?.find(a => a.account_id === accountId || a.username === accountId);
+    // 2.3 — Use cache first, fallback to API for deep links
+    let acc = _allAccounts.length > 0 ? _allAccounts.find(a => a.account_id === accountId || a.username === accountId) : null;
+    if (!acc) {
+      const data = await API.adminGetAccounts({ search: accountId, page_size: 50 });
+      acc = data.accounts?.find(a => a.account_id === accountId || a.username === accountId);
+    }
     if (!acc) { content.innerHTML = '<div class="empty-state">Account not found</div>'; return; }
     _accountDetail = acc;
 
@@ -597,15 +612,15 @@ async function showEditAccount(accountId) {
   const acc = _accountDetail;
   if (!acc) return;
 
-  // Load stores & departments from DB
+  // Load stores & departments from cache
   let storeOpts = '<option value="">-- \u0e44\u0e21\u0e48\u0e23\u0e30\u0e1a\u0e38 --</option>';
   let deptOpts = '<option value="">-- \u0e44\u0e21\u0e48\u0e23\u0e30\u0e1a\u0e38 --</option>';
   try {
-    const [sd, dd] = await Promise.all([API.getStores(), API.getDepartments()]);
-    if (sd.stores) sd.stores.forEach(s => {
+    const [stores, depts] = await Promise.all([getStoresCache(), getDeptsCache()]);
+    stores.forEach(s => {
       storeOpts += `<option value="${esc(s.store_id)}" ${acc.store_id===s.store_id?'selected':''}>${esc(s.store_name)} (${esc(s.store_id)})</option>`;
     });
-    if (dd.departments) dd.departments.forEach(d => {
+    depts.forEach(d => {
       deptOpts += `<option value="${esc(d.dept_id)}" ${acc.dept_id===d.dept_id?'selected':''}>${esc(d.dept_name)} (${esc(d.dept_id)})</option>`;
     });
   } catch(e) { console.warn('Failed to load stores/depts', e); }
@@ -655,6 +670,7 @@ async function doEditAccount(accountId) {
     await API.adminUpdateAccount(updates);
     document.getElementById('modal-edit-acc')?.remove();
     App.toast('Account updated', 'success');
+    _allAccounts = []; // clear cache — next list load will re-fetch
     loadAccountDetail(accountId);
   } catch (err) {
     showFieldError('ea-error', err.message);
@@ -670,6 +686,7 @@ async function suspendAccount(accountId) {
   try {
     await API.adminUpdateAccount({ target_account_id: accountId, status: 'suspended' });
     App.toast('Account suspended', 'success');
+    _allAccounts = [];
     loadAccountDetail(accountId);
   } catch (err) { App.toast(err.message, 'error'); }
   finally { App.hideLoader(); }
@@ -680,6 +697,7 @@ async function reactivateAccount(accountId) {
   try {
     await API.adminUpdateAccount({ target_account_id: accountId, status: 'approved' });
     App.toast('Account reactivated', 'success');
+    _allAccounts = [];
     loadAccountDetail(accountId);
   } catch (err) { App.toast(err.message, 'error'); }
   finally { App.hideLoader(); }
@@ -711,8 +729,12 @@ async function loadRegReview(requestId) {
   if (!content) return;
 
   try {
-    const data = await API.adminGetRegistrations({ page_size: 100 });
-    const req = data.requests?.find(r => r.request_id === requestId);
+    // 2.4 — Use cache first, fallback to API for deep links
+    let req = _allRegs.length > 0 ? _allRegs.find(r => r.request_id === requestId) : null;
+    if (!req) {
+      const data = await API.adminGetRegistrations({ page_size: 100 });
+      req = data.requests?.find(r => r.request_id === requestId);
+    }
     if (!req) { content.innerHTML = '<div class="empty-state">ไม่พบคำขอ</div>'; return; }
     _regDetail = req;
 
@@ -778,6 +800,7 @@ async function reviewReg(requestId, action) {
       review_note: review_note
     });
     App.toast(action === 'approve' ? 'อนุมัติแล้ว' : 'ปฏิเสธแล้ว', 'success');
+    _allRegs = []; // clear cache — next list load will re-fetch
     App.go('admin');
   } catch (err) {
     App.toast(err.message, 'error');
@@ -1151,6 +1174,7 @@ async function doCreateStore() {
     await API.adminCreateStore(data);
     document.getElementById('modal-create-store')?.remove();
     App.toast('Store created', 'success');
+    _cachedStores = null; // clear dropdown cache
     loadAdminContent();
   } catch(e) { showFieldError('cs-error', e.message); }
   finally { App.hideLoader(); }
@@ -1189,6 +1213,7 @@ async function doEditStore(storeId) {
     await API.adminUpdateStore(data);
     document.getElementById('modal-edit-store')?.remove();
     App.toast('Store updated', 'success');
+    _cachedStores = null;
     loadAdminContent();
   } catch(e) { showFieldError('es-error', e.message); }
   finally { App.hideLoader(); }
@@ -1250,6 +1275,7 @@ async function doCreateDept() {
     await API.adminCreateDept(data);
     document.getElementById('modal-create-dept')?.remove();
     App.toast('Department created', 'success');
+    _cachedDepts = null;
     loadAdminContent();
   } catch(e) { showFieldError('cd-error', e.message); }
   finally { App.hideLoader(); }
@@ -1286,6 +1312,7 @@ async function doEditDept(deptId) {
     await API.adminUpdateDept(data);
     document.getElementById('modal-edit-dept')?.remove();
     App.toast('Department updated', 'success');
+    _cachedDepts = null;
     loadAdminContent();
   } catch(e) { showFieldError('ed-error', e.message); }
   finally { App.hideLoader(); }

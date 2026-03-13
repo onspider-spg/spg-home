@@ -1,5 +1,5 @@
 /**
- * Version 2.3.7 | 14 MAR 2026 | Siam Palette Group
+ * Version 2.3.8 | 14 MAR 2026 | Siam Palette Group
  * ═══════════════════════════════════════════
  * SPG App — Home Module Frontend
  * screens.js — Screen Renderers S1–S6
@@ -735,7 +735,12 @@ async function saveProfileEdit() {
     document.getElementById('edit-profile-modal')?.remove();
     App.hideLoader();
     App.toast('Profile updated', 'success');
-    await loadProfile();
+    // Update memory directly — no re-fetch needed
+    if (_profileData) {
+      _profileData.display_name = display_name;
+      _profileData.phone = phone;
+      renderProfileContent(_profileData);
+    }
   } catch (err) {
     App.hideLoader();
     showFieldError('pf-edit-error', err.message || 'Update failed');
